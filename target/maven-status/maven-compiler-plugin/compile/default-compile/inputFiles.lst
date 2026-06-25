@@ -3,11 +3,17 @@ C:\Library_Managment\src\main\java\com\library\model\Media.java
 C:\Library_Managment\src\main\java\com\library\controller\MediaController.java
 C:\Library_Managment\src\main\java\com\library\model\Transaction.java
 C:\Library_Managment\src\main\java\com\library\model\Member.java
+C:\Library_Managment\src\main\java\com\library\auth\User.java
 C:\Library_Managment\src\main\java\com\library\controller\MemberController.java
 C:\Library_Managment\src\main\java\com\library\controller\TransactionController.java
 C:\Library_Managment\src\main\java\com\library\service\MediaService.java
 C:\Library_Managment\src\main\java\com\library\dao\MediaDAO.java
+C:\Library_Managment\src\main\java\com\library\auth\AuthController.java
 C:\Library_Managment\src\main\java\com\library\LibraryApplication.java
 C:\Library_Managment\src\main\java\com\library\service\TransactionService.java
+C:\Library_Managment\src\main\java\com\library\config\SecurityConfig.java
 C:\Library_Managment\src\main\java\com\library\dao\TransactionDAO.java
+C:\Library_Managment\src\main\java\com\library\auth\UserDAO.java
+C:\Library_Managment\src\main\java\com\library\auth\JwtUtil.java
 C:\Library_Managment\src\main\java\com\library\service\MemberService.java
+C:\Library_Managment\src\main\java\com\library\auth\JwtFilter.java

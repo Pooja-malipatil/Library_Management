@@ -62,5 +62,10 @@ public class MemberDAO {
             return m;
         },
         pattern, pattern);
-}
     }
+    public Member findByEmail(String email) {
+        List<Member> list = jdbcTemplate.query(
+            "SELECT * FROM members WHERE email = ?", rowMapper, email);
+            return list.isEmpty() ? null : list.get(0);
+        }
+}
