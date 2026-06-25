@@ -1,14 +1,20 @@
 package com.library.auth;
 
-import com.library.dao.MemberDAO;
-import com.library.model.Member;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.library.dao.MemberDAO;
+import com.library.model.Member;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -72,4 +78,9 @@ public class AuthController {
 
         return ResponseEntity.ok("Registration successful! Please login.");
     }
+
+    @GetMapping("/hash")
+    public String generateHash() {
+        return passwordEncoder.encode("admin123");
+}
 }

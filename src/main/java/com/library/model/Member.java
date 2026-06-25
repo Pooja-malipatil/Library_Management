@@ -19,4 +19,10 @@ public class Member {
     public void setPhone(String phone) { this.phone = phone; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+    public Member(String name, String email, String phone) {
+    this.name  = name;
+    this.email = email;
+    this.phone = phone;
+    this.active = true;
+}
 }
