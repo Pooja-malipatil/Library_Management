@@ -35,4 +35,17 @@ public class MediaService {
         mediaDAO.add(m);
         return "Media added successfully!";
     }
+    public void deleteMedia(int id) {
+    Media m = mediaDAO.findById(id);
+    if (m == null) throw new RuntimeException("Media not found with id: " + id);
+    mediaDAO.delete(id);
+} 
+    public String updateMedia(Media m) {
+        if (m.getTitle() == null || m.getTitle().isBlank())
+            throw new IllegalArgumentException("Title is required.");
+        if (m.getCreator() == null || m.getCreator().isBlank())
+            throw new IllegalArgumentException("Creator is required.");
+        mediaDAO.update(m);
+        return "Media updated successfully!";
+    }
 }

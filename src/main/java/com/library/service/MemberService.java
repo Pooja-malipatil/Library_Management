@@ -34,4 +34,13 @@ public class MemberService {
         memberDAO.deactivate(id);
         return "Member deactivated successfully!";
     }
+    public String deleteMember(int id) {
+        Member m = memberDAO.findById(id);
+        if (m == null) throw new RuntimeException("Member not found with id: " + id);
+        memberDAO.delete(id);
+        return "Member deleted successfully!";
+    }
+    public List<Member> searchMembers(String keyword) {
+        return memberDAO.search(keyword);
+    }
 }

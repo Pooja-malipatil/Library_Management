@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#4f46e5">
+    <title>Library Ledger</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>📚 Library Ledger</h1>
+                <p>Digital Media Management</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" onclick="showPage('dashboard')">
+            <span>🏠</span>
+            <label>Home</label>
+        </button>
+        <button class="nav-btn" onclick="showPage('media')">
+            <span>📚</span>
+            <label>Media</label>
+        </button>
+        <button class="nav-btn" onclick="showPage('members')">
+            <span>👥</span>
+            <label>Members</label>
+        </button>
+        <button class="nav-btn" onclick="showPage('transactions')">
+            <span>📋</span>
+            <label>Ledger</label>
+        </button>
+    </nav>
+
+    <!-- Pages -->
+    <main class="main-content">
+
+        <!-- Dashboard Page -->
+        <div id="page-dashboard" class="page active">
+            <div class="welcome-banner">
+                <h2>Welcome Back! 👋</h2>
+                <p>Here's your library overview</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="stat-icon">📚</div>
+                    <div class="stat-info">
+                        <h3 id="total-media">0</h3>
+                        <p>Total Media</p>
+                    </div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <h3 id="total-members">0</h3>
+                        <p>Members</p>
+                    </div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="stat-icon">🔄</div>
+                    <div class="stat-info">
+                        <h3 id="total-borrowed">0</h3>
+                        <p>Borrowed</p>
+                    </div>
+                </div>
+                <div class="stat-card red">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-info">
+                        <h3 id="total-overdue">0</h3>
+                        <p>Overdue</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="chart-card">
+                <h3>Media by Type</h3>
+                <canvas id="mediaChart"></canvas>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h2>Quick Actions</h2>
+                <div class="action-grid">
+                    <button class="action-btn" onclick="showPage('media'); showAddMediaForm()">
+                        <span>➕</span>
+                        <label>Add Media</label>
+                    </button>
+                    <button class="action-btn" onclick="showPage('members'); showAddMemberForm()">
+                        <span>👤</span>
+                        <label>Add Member</label>
+                    </button>
+                    <button class="action-btn" onclick="showPage('transactions'); showBorrowForm()">
+                        <span>📤</span>
+                        <label>Borrow</label>
+                    </button>
+                    <button class="action-btn" onclick="showPage('transactions'); showReturnForm()">
+                        <span>📥</span>
+                        <label>Return</label>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Media Page -->
+        <div id="page-media" class="page">
+            <div class="page-header">
+                <h2>Media Inventory</h2>
+                <button class="btn-primary" onclick="showAddMediaForm()">+ Add</button>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="media-search" placeholder="🔍 Search title or creator..." oninput="searchMedia()">
+            </div>
+            <div class="filter-tabs">
+                <button class="filter-btn active" onclick="filterMedia('ALL', this)">All</button>
+                <button class="filter-btn" onclick="filterMedia('BOOK', this)">📖 Books</button>
+                <button class="filter-btn" onclick="filterMedia('DVD', this)">📀 DVDs</button>
+                <button class="filter-btn" onclick="filterMedia('MAGAZINE', this)">📰 Magazines</button>
+                <button class="filter-btn" onclick="filterMedia('AUDIOBOOK', this)">🎧 Audio</button>
+            </div>
+            <div id="media-list" class="card-list"></div>
+
+            <!-- Add Media Modal -->
+            <div id="add-media-form" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>➕ Add New Media</h3>
+                        <button class="close-btn" onclick="hideModal('add-media-form')">✕</button>
+                    </div>
+                    <input type="text" id="m-title" placeholder="Title *">
+                    <input type="text" id="m-creator" placeholder="Creator *">
+                    <select id="m-type">
+                        <option value="BOOK">📖 Book</option>
+                        <option value="DVD">📀 DVD</option>
+                        <option value="MAGAZINE">📰 Magazine</option>
+                        <option value="AUDIOBOOK">🎧 Audiobook</option>
+                        <option value="OTHER">📦 Other</option>
+                    </select>
+                    <input type="text" id="m-genre" placeholder="Genre">
+                    <input type="number" id="m-year" placeholder="Release Year">
+                    <input type="number" id="m-copies" placeholder="Total Copies *" min="1">
+                    <div class="modal-buttons">
+                        <button class="btn-secondary" onclick="hideModal('add-media-form')">Cancel</button>
+                        <button class="btn-primary" onclick="addMedia()">Add Media</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Media Modal -->
+            <div id="edit-media-form" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>✏️ Edit Media</h3>
+                        <button class="close-btn" onclick="hideModal('edit-media-form')">✕</button>
+                    </div>
+                    <input type="hidden" id="e-id">
+                    <input type="text" id="e-title" placeholder="Title *">
+                    <input type="text" id="e-creator" placeholder="Creator *">
+                    <select id="e-type">
+                        <option value="BOOK">📖 Book</option>
+                        <option value="DVD">📀 DVD</option>
+                        <option value="MAGAZINE">📰 Magazine</option>
+                        <option value="AUDIOBOOK">🎧 Audiobook</option>
+                        <option value="OTHER">📦 Other</option>
+                    </select>
+                    <input type="text" id="e-genre" placeholder="Genre">
+                    <input type="number" id="e-year" placeholder="Release Year">
+                    <input type="number" id="e-copies" placeholder="Total Copies *" min="1">
+                    <div class="modal-buttons">
+                        <button class="btn-secondary" onclick="hideModal('edit-media-form')">Cancel</button>
+                        <button class="btn-primary" onclick="updateMedia()">Update</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members Page -->
+        <div id="page-members" class="page">
+            <div class="page-header">
+                <h2>Members</h2>
+                <button class="btn-primary" onclick="showAddMemberForm()">+ Add</button>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="member-search" placeholder="🔍 Search name or email..." oninput="searchMembers()">
+            </div>
+            <div id="members-list" class="card-list"></div>
+
+            <!-- Add Member Modal -->
+            <div id="add-member-form" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>👤 Register Member</h3>
+                        <button class="close-btn" onclick="hideModal('add-member-form')">✕</button>
+                    </div>
+                    <input type="text" id="mb-name" placeholder="Full Name *">
+                    <input type="email" id="mb-email" placeholder="Email *">
+                    <input type="tel" id="mb-phone" placeholder="Phone *">
+                    <div class="modal-buttons">
+                        <button class="btn-secondary" onclick="hideModal('add-member-form')">Cancel</button>
+                        <button class="btn-primary" onclick="addMember()">Register</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Borrows Modal -->
+            <div id="view-borrows-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>📋 Active Borrows</h3>
+                        <button class="close-btn" onclick="hideModal('view-borrows-modal')">✕</button>
+                    </div>
+                    <div id="member-borrows-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Page -->
+        <div id="page-transactions" class="page">
+            <div class="page-header">
+                <h2>Transaction Ledger</h2>
+            </div>
+            <div class="action-row">
+                <button class="btn-primary" onclick="showBorrowForm()">📤 Borrow</button>
+                <button class="btn-secondary" onclick="showReturnForm()">📥 Return</button>
+                <button class="btn-warning" onclick="markOverdue()">⚠️ Overdue</button>
+            </div>
+            <div id="transactions-list" class="card-list"></div>
+
+            <!-- Borrow Modal -->
+            <div id="borrow-form" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>📤 Borrow Media</h3>
+                        <button class="close-btn" onclick="hideModal('borrow-form')">✕</button>
+                    </div>
+                    <input type="number" id="b-member-id" placeholder="Member ID *" min="1">
+                    <input type="number" id="b-media-id" placeholder="Media ID *" min="1">
+                    <input type="number" id="b-days" placeholder="Loan Days *" min="1" max="90" value="7">
+                    <div class="modal-buttons">
+                        <button class="btn-secondary" onclick="hideModal('borrow-form')">Cancel</button>
+                        <button class="btn-primary" onclick="borrowMedia()">Borrow</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Return Modal -->
+            <div id="return-form" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>📥 Return Media</h3>
+                        <button class="close-btn" onclick="hideModal('return-form')">✕</button>
+                    </div>
+                    <input type="number" id="r-txn-id" placeholder="Transaction ID *" min="1">
+                    <div class="modal-buttons">
+                        <button class="btn-secondary" onclick="hideModal('return-form')">Cancel</button>
+                        <button class="btn-primary" onclick="returnMedia()">Return</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

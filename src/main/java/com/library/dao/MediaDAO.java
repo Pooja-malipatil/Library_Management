@@ -1,12 +1,13 @@
 package com.library.dao;
 
-import com.library.model.Media;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.library.model.Media;
 
 @Repository
 public class MediaDAO {
@@ -65,4 +66,14 @@ public class MediaDAO {
         return jdbcTemplate.update(
             "UPDATE media SET available = available + 1 WHERE id = ? AND available < total_copies", id) > 0;
     }
+    public int delete(int id) {
+    return jdbcTemplate.update("DELETE FROM media WHERE id = ?", id);
+    }
+    public int update(Media m) {
+        return jdbcTemplate.update(
+        "UPDATE media SET title=?, creator=?, media_type=?, genre=?, release_year=?, total_copies=? WHERE id=?",
+        m.getTitle(), m.getCreator(), m.getMediaType(), m.getGenre(),
+        m.getReleaseYear(), m.getTotalCopies(), m.getId());
+    }
+
 }

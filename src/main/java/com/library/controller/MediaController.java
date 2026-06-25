@@ -48,4 +48,22 @@ public class MediaController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteMedia(@PathVariable int id) {
+        try {
+            mediaService.deleteMedia(id);
+            return ResponseEntity.ok("Media deleted successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateMedia(@PathVariable int id, @RequestBody Media media) {
+        try {
+            media.setId(id);
+            return ResponseEntity.ok(mediaService.updateMedia(media));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

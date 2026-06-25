@@ -47,4 +47,22 @@ public class MemberController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteMember(@PathVariable int id) {
+        try {
+            return ResponseEntity.ok(memberService.deleteMember(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchMembers(@RequestParam String keyword) {
+        try {
+            return ResponseEntity.ok(memberService.searchMembers(keyword));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
