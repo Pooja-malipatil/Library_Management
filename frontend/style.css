@@ -605,3 +605,22 @@ body {
 .toast.hidden  { display: none; }
 .toast.success { background: #16a34a; }
 .toast.error   { background: #dc2626; }
+
+
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logout-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+}

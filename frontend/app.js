@@ -1,5 +1,3 @@
-// Auth check
-// Auth check
 const token = localStorage.getItem('token');
 const role  = localStorage.getItem('role');
 if (!token || role !== 'ADMIN') window.location.href = 'login.html';
@@ -439,7 +437,7 @@ async function returnMedia() {
 
 async function markOverdue() {
     try {
-        const res = await fetch(`${API}/transactions/overdue`, { method: 'PUT', headers: authHeaders });
+        
         const msg = await res.text();
         showToast('✅ ' + msg);
         loadTransactions();
