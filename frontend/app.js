@@ -12,12 +12,6 @@ const authHeaders = {
     'Content-Type':  'application/json',
     'Authorization': 'Bearer ' + token
 };
-const API = 'http://localhost:8082/api';
-let allMedia = [];
-let allMembers = [];
-let mediaChart = null;
-
-// ── Page Navigation ───────────────────────────────────────
 function showPage(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
