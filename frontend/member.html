@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#4f46e5">
+    <title>Library Ledger — Member</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+        body {
+            background: #f0f4ff;
+            color: #1e293b;
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 20px 16px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(79,70,229,0.4);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 { font-size: 20px; font-weight: 700; }
+        .header p  { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0 10px;
+            box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 16px;
+            border-radius: 12px;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+
+        .nav-btn span  { font-size: 22px; }
+        .nav-btn label { font-size: 10px; margin-top: 2px; cursor: pointer; font-weight: 500; }
+        .nav-btn.active { color: #4f46e5; }
+
+        .main-content { padding: 16px; padding-bottom: 90px; }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* Welcome */
+        .welcome-banner {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 15px rgba(79,70,229,0.3);
+        }
+
+        .welcome-banner h2 { font-size: 20px; font-weight: 700; }
+        .welcome-banner p  { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .stat-icon { font-size: 30px; }
+        .stat-info h3 { font-size: 26px; font-weight: 700; }
+        .stat-info p  { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .stat-card.blue   .stat-info h3 { color: #4f46e5; }
+        .stat-card.orange .stat-info h3 { color: #ea580c; }
+
+        /* Cards */
+        .card-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .media-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 4px solid #4f46e5;
+        }
+
+        .media-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            gap: 8px;
+        }
+
+        .media-card h3 { font-size: 15px; font-weight: 700; flex: 1; }
+
+        .badge {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .badge-book      { background: #ede9fe; color: #4f46e5; }
+        .badge-dvd       { background: #fce7f3; color: #be185d; }
+        .badge-magazine  { background: #dcfce7; color: #15803d; }
+        .badge-audiobook { background: #fef3c7; color: #b45309; }
+        .badge-other     { background: #f1f5f9; color: #475569; }
+
+        .media-card p { font-size: 13px; color: #64748b; margin-bottom: 4px; }
+
+        .media-id-badge {
+            display: inline-block;
+            background: #f0f4ff;
+            color: #4f46e5;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-top: 6px;
+        }
+
+        .availability {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .avail-bar {
+            flex: 1;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .avail-fill { height: 100%; border-radius: 3px; }
+        .avail-fill.high   { background: #16a34a; }
+        .avail-fill.medium { background: #ea580c; }
+        .avail-fill.low    { background: #dc2626; }
+        .avail-text { font-size: 12px; color: #64748b; white-space: nowrap; font-weight: 500; }
+
+        /* Txn Card */
+        .txn-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 4px solid #e2e8f0;
+        }
+
+        .txn-card.borrowed { border-left-color: #4f46e5; }
+        .txn-card.returned { border-left-color: #16a34a; }
+        .txn-card.overdue  { border-left-color: #dc2626; }
+        .txn-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+        .txn-card p  { font-size: 12px; color: #64748b; margin-bottom: 3px; }
+
+        .txn-status {
+            display: inline-block;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .status-borrowed { background: #ede9fe; color: #4f46e5; }
+        .status-returned { background: #dcfce7; color: #15803d; }
+        .status-overdue  { background: #fee2e2; color: #dc2626; }
+
+        /* Search */
+        .search-bar { margin-bottom: 12px; }
+        .search-bar input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            background: white;
+            outline: none;
+        }
+        .search-bar input:focus { border-color: #4f46e5; }
+
+        /* Filter */
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+            scrollbar-width: none;
+        }
+        .filter-tabs::-webkit-scrollbar { display: none; }
+
+        .filter-btn {
+            padding: 7px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 20px;
+            background: white;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            color: #475569;
+            font-weight: 500;
+        }
+        .filter-btn.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .page-header h2 { font-size: 20px; font-weight: 700; }
+
+        /* Profile */
+        .profile-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .profile-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 auto 12px;
+        }
+
+        .profile-card h3 { font-size: 18px; font-weight: 700; }
+        .profile-card p  { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+        .profile-info {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            text-align: left;
+        }
+
+        .profile-info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+
+        .profile-info-item:last-child { border-bottom: none; }
+        .profile-info-item span:first-child { color: #64748b; }
+        .profile-info-item span:last-child  { font-weight: 600; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 300;
+            max-width: 320px;
+            text-align: center;
+        }
+        .toast.hidden  { display: none; }
+        .toast.success { background: #16a34a; }
+        .toast.error   { background: #dc2626; }
+
+        .empty-state {
+            text-align: center;
+            color: #94a3b8;
+            padding: 40px 20px;
+        }
+        .empty-state span { font-size: 48px; display: block; margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div>
+                <h1>📚 Library Ledger</h1>
+                <p id="welcome-name">Welcome!</p>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" onclick="showPage('home')">
+            <span>🏠</span><label>Home</label>
+        </button>
+        <button class="nav-btn" onclick="showPage('browse')">
+            <span>📚</span><label>Browse</label>
+        </button>
+        <button class="nav-btn" onclick="showPage('mybooks')">
+            <span>🔖</span><label>My Books</label>
+        </button>
+        <button class="nav-btn" onclick="showPage('profile')">
+            <span>👤</span><label>Profile</label>
+        </button>
+    </nav>
+
+    <main class="main-content">
+
+        <!-- Home Page -->
+        <div id="page-home" class="page active">
+            <div class="welcome-banner">
+                <h2 id="home-greeting">Hello! 👋</h2>
+                <p>What would you like to read today?</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="stat-icon">🔖</div>
+                    <div class="stat-info">
+                        <h3 id="my-borrowed">0</h3>
+                        <p>Currently Borrowed</p>
+                    </div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-info">
+                        <h3 id="my-overdue">0</h3>
+                        <p>Overdue</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background:white;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:16px">
+                <h3 style="font-size:15px;font-weight:600;color:#475569;margin-bottom:12px">Recently Added Media</h3>
+                <div id="recent-media" class="card-list"></div>
+            </div>
+        </div>
+
+        <!-- Browse Page -->
+        <div id="page-browse" class="page">
+            <div class="page-header">
+                <h2>Browse Media</h2>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="browse-search" placeholder="🔍 Search title or creator..." oninput="searchBrowse()">
+            </div>
+            <div class="filter-tabs">
+                <button class="filter-btn active" onclick="filterBrowse('ALL', this)">All</button>
+                <button class="filter-btn" onclick="filterBrowse('BOOK', this)">📖 Books</button>
+                <button class="filter-btn" onclick="filterBrowse('DVD', this)">📀 DVDs</button>
+                <button class="filter-btn" onclick="filterBrowse('MAGAZINE', this)">📰 Magazines</button>
+                <button class="filter-btn" onclick="filterBrowse('AUDIOBOOK', this)">🎧 Audio</button>
+            </div>
+            <div id="browse-list" class="card-list"></div>
+        </div>
+
+        <!-- My Books Page -->
+        <div id="page-mybooks" class="page">
+            <div class="page-header">
+                <h2>My Borrowed Items</h2>
+            </div>
+            <div id="my-books-list" class="card-list"></div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="page-profile" class="page">
+            <div class="page-header">
+                <h2>My Profile</h2>
+            </div>
+            <div class="profile-card">
+                <div class="profile-avatar" id="profile-avatar">?</div>
+                <h3 id="profile-name">-</h3>
+                <p id="profile-role">Member</p>
+                <div class="profile-info">
+                    <div class="profile-info-item">
+                        <span>📧 Email</span>
+                        <span id="profile-email">-</span>
+                    </div>
+                    <div class="profile-info-item">
+                        <span>🎭 Role</span>
+                        <span id="profile-role-text">Member</span>
+                    </div>
+                    <div class="profile-info-item">
+                        <span>🔖 Borrowed</span>
+                        <span id="profile-borrowed">0</span>
+                    </div>
+                </div>
+            </div>
+            <button onclick="logout()" style="width:100%;padding:14px;background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">
+                🚪 Logout
+            </button>
+        </div>
+
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+
+<script>
+    const API      = 'http://localhost:8082/api';
+    const token    = localStorage.getItem('token');
+    const role     = localStorage.getItem('role');
+    const name     = localStorage.getItem('name');
+    const email    = localStorage.getItem('email');
+    const memberId = localStorage.getItem('memberId');
+
+    // Redirect if not logged in or not a member
+    if (!token) window.location.href = 'login.html';
+
+    let allMedia = [];
+
+    const headers = {
+        'Content-Type':  'application/json',
+        'Authorization': 'Bearer ' + token
+    };
+
+    // ── Init ──────────────────────────────────────────────
+    document.getElementById('welcome-name').textContent  = 'Welcome, ' + name + '!';
+    document.getElementById('home-greeting').textContent = 'Hello, ' + name + '! 👋';
+    document.getElementById('profile-name').textContent  = name;
+    document.getElementById('profile-email').textContent = email;
+    document.getElementById('profile-avatar').textContent = name ? name.charAt(0).toUpperCase() : '?';
+
+    // ── Page Nav ──────────────────────────────────────────
+    function showPage(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('page-' + page).classList.add('active');
+        document.querySelectorAll('.nav-btn')[['home','browse','mybooks','profile'].indexOf(page)].classList.add('active');
+        if (page === 'home')    loadHome();
+        if (page === 'browse')  loadBrowse();
+        if (page === 'mybooks') loadMyBooks();
+        if (page === 'profile') loadProfile();
+    }
+
+    // ── Toast ─────────────────────────────────────────────
+    function showToast(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast ' + type;
+        setTimeout(() => t.classList.add('hidden'), 3000);
+    }
+
+    // ── Home ──────────────────────────────────────────────
+    async function loadHome() {
+        try {
+            const media = await fetch(`${API}/media`, { headers }).then(r => r.json());
+            const recent = media.slice(0, 3);
+            document.getElementById('recent-media').innerHTML = recent.map(m => mediaCard(m)).join('');
+
+            if (memberId) {
+                const borrows = await fetch(`${API}/transactions/member/${memberId}`, { headers }).then(r => r.json());
+                document.getElementById('my-borrowed').textContent = borrows.filter(t => t.status === 'BORROWED').length;
+                document.getElementById('my-overdue').textContent  = borrows.filter(t => t.status === 'OVERDUE').length;
+            }
+        } catch (e) {
+            showToast('Could not load home', 'error');
+        }
+    }
+
+    // ── Browse ────────────────────────────────────────────
+    async function loadBrowse() {
+        try {
+            allMedia = await fetch(`${API}/media`, { headers }).then(r => r.json());
+            renderBrowse(allMedia);
+        } catch (e) {
+            showToast('Could not load media', 'error');
+        }
+    }
+
+    function renderBrowse(list) {
+        const c = document.getElementById('browse-list');
+        if (list.length === 0) {
+            c.innerHTML = '<div class="empty-state"><span>📭</span><p>No media found</p></div>';
+            return;
+        }
+        c.innerHTML = list.map(m => mediaCard(m)).join('');
+    }
+
+    function mediaCard(m) {
+        const pct = (m.available / m.totalCopies) * 100;
+        const cls = pct > 60 ? 'high' : pct > 30 ? 'medium' : 'low';
+        return `
+        <div class="media-card">
+            <div class="media-card-header">
+                <h3>${m.title}</h3>
+                <span class="badge badge-${m.mediaType.toLowerCase()}">${m.mediaType}</span>
+            </div>
+            <p>👤 ${m.creator}</p>
+            <p>🎭 ${m.genre || 'N/A'} &nbsp;|&nbsp; 📅 ${m.releaseYear}</p>
+            <span class="media-id-badge">ID: ${m.id}</span>
+            <div class="availability">
+                <div class="avail-bar">
+                    <div class="avail-fill ${cls}" style="width:${pct}%"></div>
+                </div>
+                <span class="avail-text">${m.available}/${m.totalCopies} available</span>
+            </div>
+        </div>`;
+    }
+
+    function searchBrowse() {
+        const kw = document.getElementById('browse-search').value.toLowerCase();
+        renderBrowse(allMedia.filter(m =>
+            m.title.toLowerCase().includes(kw) ||
+            m.creator.toLowerCase().includes(kw)
+        ));
+    }
+
+    function filterBrowse(type, btn) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderBrowse(type === 'ALL' ? allMedia : allMedia.filter(m => m.mediaType === type));
+    }
+
+    // ── My Books ──────────────────────────────────────────
+    async function loadMyBooks() {
+        if (!memberId) {
+            document.getElementById('my-books-list').innerHTML =
+                '<div class="empty-state"><span>📭</span><p>No member account linked</p></div>';
+            return;
+        }
+        try {
+            const list = await fetch(`${API}/transactions/member/${memberId}`, { headers }).then(r => r.json());
+            const c = document.getElementById('my-books-list');
+            if (list.length === 0) {
+                c.innerHTML = '<div class="empty-state"><span>📭</span><p>You have no borrowed items</p></div>';
+                return;
+            }
+            c.innerHTML = list.map(t => `
+                <div class="txn-card ${t.status.toLowerCase()}">
+                    <h3>📖 ${t.mediaTitle || 'Media #' + t.mediaId}</h3>
+                    <p>📅 Borrowed: ${new Date(t.borrowDate).toLocaleDateString()}</p>
+                    <p>⏰ Due: ${t.dueDate}</p>
+                    ${t.returnDate ? `<p>✅ Returned: ${new Date(t.returnDate).toLocaleDateString()}</p>` : ''}
+                    <p>🆔 TXN ID: <strong>${t.id}</strong></p>
+                    <span class="txn-status status-${t.status.toLowerCase()}">${t.status}</span>
+                </div>
+            `).join('');
+        } catch (e) {
+            showToast('Could not load your books', 'error');
+        }
+    }
+
+    // ── Profile ───────────────────────────────────────────
+    async function loadProfile() {
+        document.getElementById('profile-name').textContent      = name;
+        document.getElementById('profile-email').textContent     = email;
+        document.getElementById('profile-role-text').textContent = role;
+        document.getElementById('profile-avatar').textContent    = name ? name.charAt(0).toUpperCase() : '?';
+
+        if (memberId) {
+            try {
+                const borrows = await fetch(`${API}/transactions/member/${memberId}`, { headers }).then(r => r.json());
+                document.getElementById('profile-borrowed').textContent =
+                    borrows.filter(t => t.status === 'BORROWED').length;
+            } catch(e) {}
+        }
+    }
+
+    // ── Logout ────────────────────────────────────────────
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    // ── Load home on start ────────────────────────────────
+    loadHome();
+</script>
+
+</body>
+</html>

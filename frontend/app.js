@@ -1,3 +1,19 @@
+// Auth check
+// Auth check
+const token = localStorage.getItem('token');
+const role  = localStorage.getItem('role');
+if (!token || role !== 'ADMIN') window.location.href = 'login.html';
+
+const API = 'http://localhost:8082/api';
+let allMedia = [];
+let allMembers = [];
+let mediaChart = null;
+
+// Auth headers for all requests
+const authHeaders = {
+    'Content-Type':  'application/json',
+    'Authorization': 'Bearer ' + token
+};
 const API = 'http://localhost:8082/api';
 let allMedia = [];
 let allMembers = [];
@@ -34,10 +50,10 @@ function hideModal(id)       { document.getElementById(id).classList.add('hidden
 async function loadDashboard() {
     try {
         const [media, members, transactions] = await Promise.all([
-            fetch(`${API}/media`).then(r => r.json()),
-            fetch(`${API}/members`).then(r => r.json()),
-            fetch(`${API}/transactions`).then(r => r.json())
-        ]);
+    fetch(`${API}/media`,        { headers: authHeaders }).then(r => r.json()),
+    fetch(`${API}/members`,      { headers: authHeaders }).then(r => r.json()),
+    fetch(`${API}/transactions`, { headers: authHeaders }).then(r => r.json())
+]);
 
         document.getElementById('total-media').textContent   = media.length;
         document.getElementById('total-members').textContent = members.length;
@@ -88,7 +104,7 @@ function renderChart(media) {
 // ── Media ─────────────────────────────────────────────────
 async function loadMedia() {
     try {
-        allMedia = await fetch(`${API}/media`).then(r => r.json());
+        
         renderMedia(allMedia);
     } catch (e) {
         showToast('Could not load media', 'error');
@@ -153,8 +169,7 @@ async function addMedia() {
     try {
         const res = await fetch(`${API}/media`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            headers: authHeaders,
         });
         const msg = await res.text();
         if (res.ok) {
@@ -201,7 +216,7 @@ async function updateMedia() {
     try {
         const res = await fetch(`${API}/media/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders,
             body: JSON.stringify(body)
         });
         const msg = await res.text();
@@ -221,7 +236,7 @@ async function updateMedia() {
 async function deleteMedia(id) {
     if (!confirm('Are you sure you want to delete this media?')) return;
     try {
-        const res = await fetch(`${API}/media/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API}/media/${id}`, { method: 'DELETE', headers: authHeaders });
         const msg = await res.text();
         if (res.ok) {
             showToast('✅ ' + msg);
@@ -238,7 +253,7 @@ async function deleteMedia(id) {
 // ── Members ───────────────────────────────────────────────
 async function loadMembers() {
     try {
-        allMembers = await fetch(`${API}/members`).then(r => r.json());
+        allMembers = await fetch(`${API}/members`, { headers: authHeaders }).then(r => r.json());
         renderMembers(allMembers);
     } catch (e) {
         showToast('Could not load members', 'error');
@@ -278,7 +293,7 @@ async function searchMembers() {
         return;
     }
     try {
-        const list = await fetch(`${API}/members/search?keyword=${keyword}`).then(r => r.json());
+        const list = await fetch(`${API}/members/search?keyword=${keyword}`, { headers: authHeaders }).then(r => r.json());
         renderMembers(list);
     } catch (e) {
         showToast('Could not search members', 'error');
@@ -294,7 +309,7 @@ async function addMember() {
     try {
         const res = await fetch(`${API}/members`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders,
             body: JSON.stringify(body)
         });
         const msg = await res.text();
@@ -316,7 +331,7 @@ async function addMember() {
 async function deleteMember(id) {
     if (!confirm('Are you sure you want to delete this member?')) return;
     try {
-        const res = await fetch(`${API}/members/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API}/members/${id}`, { method: 'DELETE', headers: authHeaders });
         const msg = await res.text();
         if (res.ok) {
             showToast('✅ ' + msg);
@@ -332,7 +347,7 @@ async function deleteMember(id) {
 
 async function viewMemberBorrows(id, name) {
     try {
-        const list = await fetch(`${API}/transactions/member/${id}`).then(r => r.json());
+        const list = await fetch(`${API}/transactions/member/${id}`, { headers: authHeaders }).then(r => r.json());
         const container = document.getElementById('member-borrows-list');
         document.querySelector('#view-borrows-modal .modal-header h3').textContent = `📋 ${name}'s Borrows`;
         if (list.length === 0) {
@@ -356,7 +371,7 @@ async function viewMemberBorrows(id, name) {
 // ── Transactions ──────────────────────────────────────────
 async function loadTransactions() {
     try {
-        const transactions = await fetch(`${API}/transactions`).then(r => r.json());
+        const transactions = await fetch(`${API}/transactions`, { headers: authHeaders }).then(r => r.json());
         const container = document.getElementById('transactions-list');
         if (transactions.length === 0) {
             container.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:30px">No transactions yet</p>';
@@ -387,7 +402,7 @@ async function borrowMedia() {
     try {
         const res = await fetch(`${API}/transactions/borrow`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders,
             body: JSON.stringify(body)
         });
         const msg = await res.text();
@@ -407,7 +422,7 @@ async function borrowMedia() {
 async function returnMedia() {
     const id = document.getElementById('r-txn-id').value;
     try {
-        const res = await fetch(`${API}/transactions/return/${id}`, { method: 'PUT' });
+        const res = await fetch(`${API}/transactions/return/${id}`, { method: 'PUT', headers: authHeaders });
         const msg = await res.text();
         if (res.ok) {
             showToast('✅ ' + msg);
@@ -424,7 +439,7 @@ async function returnMedia() {
 
 async function markOverdue() {
     try {
-        const res = await fetch(`${API}/transactions/overdue`, { method: 'PUT' });
+        const res = await fetch(`${API}/transactions/overdue`, { method: 'PUT', headers: authHeaders });
         const msg = await res.text();
         showToast('✅ ' + msg);
         loadTransactions();

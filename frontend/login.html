@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#4f46e5">
+    <title>Library Ledger — Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            padding: 32px 24px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .logo h1 { font-size: 28px; font-weight: 800; color: #4f46e5; }
+        .logo p  { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+        .tabs {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #4f46e5;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .form { display: none; flex-direction: column; gap: 14px; }
+        .form.active { display: flex; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input {
+            padding: 12px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            background: #fafafa;
+        }
+
+        .form-group input:focus {
+            border-color: #4f46e5;
+            background: white;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 4px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(79,70,229,0.3);
+        }
+
+        .btn:active { transform: scale(0.98); }
+
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #16a34a;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+        }
+
+        .demo-hint {
+            background: #ede9fe;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #4f46e5;
+            text-align: center;
+        }
+
+        .demo-hint strong { display: block; margin-bottom: 4px; }
+
+        .loading { opacity: 0.7; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo">
+        <h1>📚 Library Ledger</h1>
+        <p>Digital Media Management System</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('login')">Login</button>
+        <button class="tab" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- Error / Success -->
+    <div id="error-msg"   class="error"></div>
+    <div id="success-msg" class="success"></div>
+
+    <!-- Login Form -->
+    <div id="login-form" class="form active">
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="l-email" placeholder="Enter your email">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="l-password" placeholder="Enter your password">
+        </div>
+        <button class="btn" onclick="login()">Login →</button>
+
+        <div class="demo-hint">
+            <strong>Admin Demo Account</strong>
+            Email: admin@library.com &nbsp;|&nbsp; Password: admin123
+        </div>
+    </div>
+
+    <!-- Register Form -->
+    <div id="register-form" class="form">
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="r-name" placeholder="Enter your name">
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="r-email" placeholder="Enter your email">
+        </div>
+        <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="r-phone" placeholder="Enter your phone">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="r-password" placeholder="Create a password">
+        </div>
+        <button class="btn" onclick="register()">Register →</button>
+    </div>
+</div>
+
+<script>
+    const API = 'http://localhost:8082/api';
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.form').forEach(f => f.classList.remove('active'));
+        document.querySelector(`.tab:${tab === 'login' ? 'first-child' : 'last-child'}`).classList.add('active');
+        document.getElementById(tab + '-form').classList.add('active');
+        hideMessages();
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('error-msg');
+        el.textContent = msg;
+        el.style.display = 'block';
+        document.getElementById('success-msg').style.display = 'none';
+    }
+
+    function showSuccess(msg) {
+        const el = document.getElementById('success-msg');
+        el.textContent = msg;
+        el.style.display = 'block';
+        document.getElementById('error-msg').style.display = 'none';
+    }
+
+    function hideMessages() {
+        document.getElementById('error-msg').style.display   = 'none';
+        document.getElementById('success-msg').style.display = 'none';
+    }
+
+    async function login() {
+        const email    = document.getElementById('l-email').value.trim();
+        const password = document.getElementById('l-password').value.trim();
+
+        if (!email || !password) { showError('Please fill in all fields.'); return; }
+
+        try {
+            const res = await fetch(`${API}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('token',    data.token);
+                localStorage.setItem('role',     data.role);
+                localStorage.setItem('name',     data.name);
+                localStorage.setItem('email',    data.email);
+                localStorage.setItem('memberId', data.memberId || '');
+
+                if (data.role === 'ADMIN') {
+                    window.location.href = 'index.html';
+                } else {
+                    window.location.href = 'member.html';
+                }
+            } else {
+                const msg = await res.text();
+                showError(msg || 'Invalid email or password.');
+            }
+        } catch (e) {
+            showError('Could not connect to server. Make sure Spring Boot is running.');
+        }
+    }
+
+    async function register() {
+        const name     = document.getElementById('r-name').value.trim();
+        const email    = document.getElementById('r-email').value.trim();
+        const phone    = document.getElementById('r-phone').value.trim();
+        const password = document.getElementById('r-password').value.trim();
+
+        if (!name || !email || !phone || !password) { showError('Please fill in all fields.'); return; }
+
+        try {
+            const res = await fetch(`${API}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone, password })
+            });
+
+            const msg = await res.text();
+            if (res.ok) {
+                showSuccess(msg + ' Please login now.');
+                switchTab('login');
+                document.getElementById('l-email').value = email;
+            } else {
+                showError(msg);
+            }
+        } catch (e) {
+            showError('Could not connect to server.');
+        }
+    }
+
+    // Check if already logged in
+    if (localStorage.getItem('token')) {
+        const role = localStorage.getItem('role');
+        window.location.href = role === 'ADMIN' ? 'index.html' : 'member.html';
+    }
+</script>
+
+</body>
+</html>
