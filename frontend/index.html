@@ -231,7 +231,7 @@
             <div class="action-row">
                 <button class="btn-primary" onclick="showBorrowForm()">📤 Borrow</button>
                 <button class="btn-secondary" onclick="showReturnForm()">📥 Return</button>
-                <button class="btn-warning" onclick="markOverdue()">⚠️ Overdue</button>
+                <button class="btn-warning" onclick="loadTransactions()">🔄 Refresh</button>
             </div>
             <div id="transactions-list" class="card-list"></div>
 
@@ -253,20 +253,20 @@
             </div>
 
             <!-- Return Modal -->
-            <div id="return-form" class="modal hidden">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>📥 Return Media</h3>
-                        <button class="close-btn" onclick="hideModal('return-form')">✕</button>
-                    </div>
-                    <input type="number" id="r-txn-id" placeholder="Transaction ID *" min="1">
-                    <div class="modal-buttons">
-                        <button class="btn-secondary" onclick="hideModal('return-form')">Cancel</button>
-                        <button class="btn-primary" onclick="returnMedia()">Return</button>
-                    </div>
-                </div>
-            </div>
+            <!-- Return Modal -->
+<div id="return-form" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📥 Return Media</h3>
+            <button class="close-btn" onclick="hideModal('return-form')">✕</button>
         </div>
+        <p style="font-size:13px;color:#64748b">Select item to return:</p>
+        <div id="return-items-list" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
+        <div class="modal-buttons">
+            <button class="btn-secondary" onclick="hideModal('return-form')">Cancel</button>
+        </div>
+    </div>
+</div>
 <!-- Activity Page -->
 <div id="page-activity" class="page">
     <div class="page-header">

@@ -20,6 +20,7 @@ function showPage(page) {
     if (page === 'media')        loadMedia();
     if (page === 'members')      loadMembers();
     if (page === 'transactions') loadTransactions();
+    if (page === 'activity')     loadMemberActivity();
 }
 
 // ── Toast ─────────────────────────────────────────────────
@@ -386,15 +387,23 @@ async function payFine(id) {
 // ── Transactions ──────────────────────────────────────────
 async function loadTransactions() {
     try {
+        // Auto mark overdue first
+        await fetch(`${API}/transactions/overdue`, { method: 'PUT', headers: authHeaders });
+
         const transactions = await fetch(`${API}/transactions`, { headers: authHeaders }).then(r => r.json());
         const container = document.getElementById('transactions-list');
+
         if (transactions.length === 0) {
             container.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:30px">No transactions yet</p>';
             return;
         }
-        container.innerHTML = transactions.map(t => {
-            const isOverdue = t.status === 'OVERDUE';
-            const fine = isOverdue ? t.fineAmount : 0;
+
+        const borrowed  = transactions.filter(t => t.status === 'BORROWED');
+        const overdue   = transactions.filter(t => t.status === 'OVERDUE');
+        const returned  = transactions.filter(t => t.status === 'RETURNED');
+
+        function txnCard(t) {
+            const fine = t.fineAmount || 0;
             return `
             <div class="txn-card ${t.status.toLowerCase()}">
                 <h3>📖 ${t.mediaTitle || 'Media #' + t.mediaId}</h3>
@@ -407,7 +416,45 @@ async function loadTransactions() {
                 <span class="txn-status status-${t.status.toLowerCase()}">${t.status}</span>
                 ${fine > 0 && !t.finePaid ? `<button onclick="payFine(${t.id})" class="btn-warning" style="margin-top:8px;font-size:12px;padding:6px 12px">💰 Mark Fine Paid</button>` : ''}
             </div>`;
-        }).join('');
+        }
+
+        container.innerHTML = `
+            <!-- Borrowed Section -->
+            <div style="margin-bottom:20px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                    <span style="background:#ede9fe;color:#4f46e5;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600">
+                        📤 Currently Borrowed (${borrowed.length})
+                    </span>
+                </div>
+                ${borrowed.length === 0
+                    ? '<p style="text-align:center;color:#94a3b8;padding:16px;background:white;border-radius:12px">No active borrows</p>'
+                    : borrowed.map(t => txnCard(t)).join('')}
+            </div>
+
+            <!-- Overdue Section -->
+            <div style="margin-bottom:20px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                    <span style="background:#fee2e2;color:#dc2626;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600">
+                        ⚠️ Overdue (${overdue.length})
+                    </span>
+                </div>
+                ${overdue.length === 0
+                    ? '<p style="text-align:center;color:#94a3b8;padding:16px;background:white;border-radius:12px">No overdue items</p>'
+                    : overdue.map(t => txnCard(t)).join('')}
+            </div>
+
+            <!-- Returned Section -->
+            <div style="margin-bottom:20px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                    <span style="background:#dcfce7;color:#15803d;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600">
+                        ✅ Returned (${returned.length})
+                    </span>
+                </div>
+                ${returned.length === 0
+                    ? '<p style="text-align:center;color:#94a3b8;padding:16px;background:white;border-radius:12px">No returned items yet</p>'
+                    : returned.map(t => txnCard(t)).join('')}
+            </div>
+        `;
     } catch (e) {
         showToast('Could not load transactions', 'error');
     }
@@ -439,8 +486,7 @@ async function borrowMedia() {
     }
 }
 
-async function returnMedia() {
-    const id = document.getElementById('r-txn-id').value;
+async function returnMedia(id) {
     try {
         const res = await fetch(`${API}/transactions/return/${id}`, { method: 'PUT', headers: authHeaders });
         const msg = await res.text();
@@ -470,30 +516,37 @@ async function markOverdue() {
 }
 // ── PDF Export ────────────────────────────────────────────
 function exportPDF() {
-    const transactions = document.getElementById('transactions-list').innerHTML;
+    const transactions = document.getElementById('transactions-list').querySelectorAll('.txn-card');
+    let rows = '';
+    transactions.forEach(t => {
+        rows += `<div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:10px">
+            ${t.innerHTML.replace(/<button[^>]*>.*?<\/button>/gs, '')}
+        </div>`;
+    });
+
     const win = window.open('', '_blank');
     win.document.write(`
         <html>
         <head>
             <title>Library Ledger — Transaction Report</title>
             <style>
-                body { font-family: Arial, sans-serif; padding: 20px; color: #1e293b; }
+                body { font-family: Arial, sans-serif; padding: 20px; color: #1e293b; max-width: 800px; margin: 0 auto; }
                 h1 { color: #4f46e5; border-bottom: 2px solid #4f46e5; padding-bottom: 10px; }
-                .txn-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-                .txn-card h3 { font-size: 15px; margin-bottom: 6px; }
-                .txn-card p  { font-size: 13px; color: #475569; margin: 3px 0; }
-                .status-borrowed { background: #ede9fe; color: #4f46e5; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
-                .status-returned { background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
-                .status-overdue  { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
-                .btn-warning { display: none; }
-                @media print { button { display: none; } }
+                h3 { font-size: 15px; margin-bottom: 6px; }
+                p  { font-size: 13px; color: #475569; margin: 3px 0; }
+                .txn-status { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+                .status-borrowed { background: #ede9fe; color: #4f46e5; }
+                .status-returned { background: #dcfce7; color: #15803d; }
+                .status-overdue  { background: #fee2e2; color: #dc2626; }
+                @media print { button { display: none !important; } }
             </style>
         </head>
         <body>
-            <h1>📚 Library Ledger — Transaction Report</h1>
-            <p>Generated: ${new Date().toLocaleString()}</p>
-            <hr>
-            ${transactions}
+            <h1>📚 Library Ledger — Full Transaction Report</h1>
+            <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+            <p><strong>Total Transactions:</strong> ${transactions.length}</p>
+            <hr style="margin:16px 0">
+            ${rows}
             <script>window.onload = () => window.print();<\/script>
         </body>
         </html>
@@ -512,58 +565,235 @@ async function loadMemberActivity() {
         const container = document.getElementById('member-activity');
         if (!container) return;
 
+        if (members.length === 0) {
+            container.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:30px">No members found</p>';
+            return;
+        }
+
         container.innerHTML = members.map(m => {
-            const memberTxns    = transactions.filter(t => t.memberId === m.id);
-            const borrowed      = memberTxns.filter(t => t.status === 'BORROWED').length;
-            const returned      = memberTxns.filter(t => t.status === 'RETURNED').length;
-            const overdue       = memberTxns.filter(t => t.status === 'OVERDUE').length;
-            const totalFines    = memberTxns.reduce((sum, t) => sum + (t.fineAmount || 0), 0);
-            const unpaidFines   = memberTxns.filter(t => t.fineAmount > 0 && !t.finePaid)
-                                            .reduce((sum, t) => sum + (t.fineAmount || 0), 0);
+            const memberTxns  = transactions.filter(t => t.memberId === m.id);
+            const borrowed    = memberTxns.filter(t => t.status === 'BORROWED');
+            const returned    = memberTxns.filter(t => t.status === 'RETURNED');
+            const overdue     = memberTxns.filter(t => t.status === 'OVERDUE');
+            const totalFines  = memberTxns.reduce((sum, t) => sum + (t.fineAmount || 0), 0);
+            const unpaidFines = memberTxns.filter(t => t.fineAmount > 0 && !t.finePaid)
+                                          .reduce((sum, t) => sum + (t.fineAmount || 0), 0);
+
+            const txnListHTML = memberTxns.length === 0 ? '<p style="color:#94a3b8;font-size:13px;padding:8px 0">No transactions</p>' :
+                memberTxns.map(t => `
+                    <div style="background:#f8fafc;border-radius:8px;padding:10px;margin-bottom:6px;border-left:3px solid ${
+                        t.status === 'BORROWED' ? '#4f46e5' : t.status === 'RETURNED' ? '#16a34a' : '#dc2626'
+                    }">
+                        <p style="font-size:13px;font-weight:600;margin-bottom:4px">📖 ${t.mediaTitle || 'Media #' + t.mediaId}</p>
+                        <p style="font-size:11px;color:#64748b">📅 Borrowed: ${new Date(t.borrowDate).toLocaleDateString()}</p>
+                        <p style="font-size:11px;color:#64748b">⏰ Due: ${new Date(t.dueDate).toLocaleDateString()}</p>
+                        ${t.returnDate ? `<p style="font-size:11px;color:#16a34a">✅ Returned: ${new Date(t.returnDate).toLocaleDateString()}</p>` : ''}
+                        ${t.fineAmount > 0 ? `<p style="font-size:11px;color:#dc2626">💰 Fine: ₹${t.fineAmount.toFixed(2)} ${t.finePaid ? '✅ Paid' : '❌ Unpaid'}</p>` : ''}
+                        <span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;background:${
+                            t.status === 'BORROWED' ? '#ede9fe' : t.status === 'RETURNED' ? '#dcfce7' : '#fee2e2'
+                        };color:${
+                            t.status === 'BORROWED' ? '#4f46e5' : t.status === 'RETURNED' ? '#15803d' : '#dc2626'
+                        }">${t.status}</span>
+                    </div>
+                `).join('');
 
             return `
-            <div style="background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+            <div style="background:white;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                <!-- Member Header -->
                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
                     <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0">
                         ${m.name.charAt(0).toUpperCase()}
                     </div>
-                    <div>
+                    <div style="flex:1">
                         <h3 style="font-size:15px;font-weight:700">${m.name}</h3>
-                        <p style="font-size:12px;color:#64748b">${m.email}</p>
+                        <p style="font-size:12px;color:#64748b">${m.email} | ${m.phone}</p>
                     </div>
-                    <span style="margin-left:auto;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;background:${m.active ? '#dcfce7' : '#fee2e2'};color:${m.active ? '#15803d' : '#dc2626'}">
+                    <span style="font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;background:${m.active ? '#dcfce7' : '#fee2e2'};color:${m.active ? '#15803d' : '#dc2626'}">
                         ${m.active ? 'Active' : 'Inactive'}
                     </span>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+
+                <!-- Stats -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
                     <div style="background:#ede9fe;border-radius:10px;padding:10px;text-align:center">
-                        <div style="font-size:20px;font-weight:700;color:#4f46e5">${borrowed}</div>
+                        <div style="font-size:20px;font-weight:700;color:#4f46e5">${borrowed.length}</div>
                         <div style="font-size:11px;color:#64748b">Borrowed</div>
                     </div>
                     <div style="background:#dcfce7;border-radius:10px;padding:10px;text-align:center">
-                        <div style="font-size:20px;font-weight:700;color:#15803d">${returned}</div>
+                        <div style="font-size:20px;font-weight:700;color:#15803d">${returned.length}</div>
                         <div style="font-size:11px;color:#64748b">Returned</div>
                     </div>
                     <div style="background:#fee2e2;border-radius:10px;padding:10px;text-align:center">
-                        <div style="font-size:20px;font-weight:700;color:#dc2626">${overdue}</div>
+                        <div style="font-size:20px;font-weight:700;color:#dc2626">${overdue.length}</div>
                         <div style="font-size:11px;color:#64748b">Overdue</div>
                     </div>
                 </div>
+
+                <!-- Fines -->
                 ${totalFines > 0 ? `
-                <div style="background:#fef3c7;border-radius:10px;padding:10px;display:flex;justify-content:space-between;align-items:center">
-                    <span style="font-size:13px;color:#b45309">💰 Total Fines: <strong>₹${totalFines.toFixed(2)}</strong></span>
+                <div style="background:#fef3c7;border-radius:10px;padding:10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <span style="font-size:13px;color:#b45309">💰 Total: <strong>₹${totalFines.toFixed(2)}</strong></span>
                     <span style="font-size:13px;color:#dc2626">Unpaid: <strong>₹${unpaidFines.toFixed(2)}</strong></span>
                 </div>` : ''}
+
+                <!-- Transaction List -->
+                <div style="margin-bottom:10px">
+                    <p style="font-size:13px;font-weight:600;color:#475569;margin-bottom:8px">📋 Transaction History (${memberTxns.length})</p>
+                    ${txnListHTML}
+                </div>
+
+                <!-- PDF Button -->
+                <button onclick="exportMemberPDF(${m.id}, '${m.name.replace(/'/g, "\\'")}')" 
+                    style="width:100%;padding:10px;background:#f0f4ff;color:#4f46e5;border:1.5px solid #c4b5fd;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">
+                    🖨️ Export ${m.name}'s Report as PDF
+                </button>
             </div>`;
         }).join('');
     } catch (e) {
+        console.error(e);
         showToast('Could not load activity report', 'error');
     }
 }
 // ── Init ──────────────────────────────────────────────────
 
+async function exportMemberPDF(memberId, memberName) {
+    try {
+        const [member, transactions] = await Promise.all([
+            fetch(`${API}/members/${memberId}`, { headers: authHeaders }).then(r => r.json()),
+            fetch(`${API}/transactions`, { headers: authHeaders }).then(r => r.json())
+        ]);
 
-if (page === 'activity') loadMemberActivity();
+        const memberTxns  = transactions.filter(t => t.memberId === memberId);
+        const borrowed    = memberTxns.filter(t => t.status === 'BORROWED').length;
+        const returned    = memberTxns.filter(t => t.status === 'RETURNED').length;
+        const overdue     = memberTxns.filter(t => t.status === 'OVERDUE').length;
+        const totalFines  = memberTxns.reduce((sum, t) => sum + (t.fineAmount || 0), 0);
+
+        const txnRows = memberTxns.map(t => `
+            <tr>
+                <td>${t.id}</td>
+                <td>${t.mediaTitle || 'Media #' + t.mediaId}</td>
+                <td>${new Date(t.borrowDate).toLocaleDateString()}</td>
+                <td>${new Date(t.dueDate).toLocaleDateString()}</td>
+                <td>${t.returnDate ? new Date(t.returnDate).toLocaleDateString() : '-'}</td>
+                <td><span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:${
+                    t.status === 'BORROWED' ? '#ede9fe' : t.status === 'RETURNED' ? '#dcfce7' : '#fee2e2'
+                };color:${
+                    t.status === 'BORROWED' ? '#4f46e5' : t.status === 'RETURNED' ? '#15803d' : '#dc2626'
+                }">${t.status}</span></td>
+                <td>${t.fineAmount > 0 ? '₹' + t.fineAmount.toFixed(2) : '-'}</td>
+                <td>${t.fineAmount > 0 ? (t.finePaid ? '✅ Paid' : '❌ Unpaid') : '-'}</td>
+            </tr>
+        `).join('');
+
+        const win = window.open('', '_blank');
+        win.document.write(`
+            <html>
+            <head>
+                <title>Member Report — ${memberName}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; color: #1e293b; }
+                    h1 { color: #4f46e5; border-bottom: 2px solid #4f46e5; padding-bottom: 10px; }
+                    h2 { color: #475569; font-size: 16px; margin-top: 20px; }
+                    .stats { display: flex; gap: 16px; margin: 16px 0; }
+                    .stat { background: #f8fafc; border-radius: 8px; padding: 12px 20px; text-align: center; flex: 1; }
+                    .stat h3 { font-size: 24px; font-weight: 700; margin: 0; }
+                    .stat p  { font-size: 12px; color: #64748b; margin: 4px 0 0; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+                    th { background: #4f46e5; color: white; padding: 10px; text-align: left; }
+                    td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
+                    tr:nth-child(even) { background: #f8fafc; }
+                    .fine-box { background: #fef3c7; border-radius: 8px; padding: 12px; margin-top: 16px; }
+                    @media print { button { display: none !important; } }
+                </style>
+            </head>
+            <body>
+                <h1>📚 Member Activity Report</h1>
+                <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+
+                <h2>👤 Member Information</h2>
+                <p><strong>Name:</strong> ${member.name}</p>
+                <p><strong>Email:</strong> ${member.email}</p>
+                <p><strong>Phone:</strong> ${member.phone}</p>
+                <p><strong>Status:</strong> ${member.active ? '✅ Active' : '❌ Inactive'}</p>
+
+                <h2>📊 Summary</h2>
+                <div class="stats">
+                    <div class="stat"><h3 style="color:#4f46e5">${borrowed}</h3><p>Currently Borrowed</p></div>
+                    <div class="stat"><h3 style="color:#15803d">${returned}</h3><p>Returned</p></div>
+                    <div class="stat"><h3 style="color:#dc2626">${overdue}</h3><p>Overdue</p></div>
+                    <div class="stat"><h3 style="color:#b45309">${memberTxns.length}</h3><p>Total Transactions</p></div>
+                </div>
+
+                ${totalFines > 0 ? `
+                <div class="fine-box">
+                    <strong>💰 Total Fines: ₹${totalFines.toFixed(2)}</strong>
+                </div>` : ''}
+
+                <h2>📋 Transaction History</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>TXN ID</th>
+                            <th>Media</th>
+                            <th>Borrowed</th>
+                            <th>Due Date</th>
+                            <th>Returned</th>
+                            <th>Status</th>
+                            <th>Fine</th>
+                            <th>Fine Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${txnRows.length > 0 ? txnRows : '<tr><td colspan="8" style="text-align:center;color:#94a3b8">No transactions</td></tr>'}
+                    </tbody>
+                </table>
+                <script>window.onload = () => window.print();<\/script>
+            </body>
+            </html>
+        `);
+        win.document.close();
+    } catch (e) {
+        showToast('Could not generate PDF', 'error');
+    }
+}
+
+async function showReturnForm() {
+    try {
+        // Auto mark overdue first
+        await fetch(`${API}/transactions/overdue`, { method: 'PUT', headers: authHeaders });
+
+        const transactions = await fetch(`${API}/transactions`, { headers: authHeaders }).then(r => r.json());
+        const activeBorrows = transactions.filter(t => t.status === 'BORROWED' || t.status === 'OVERDUE');
+
+        const container = document.getElementById('return-items-list');
+
+        if (activeBorrows.length === 0) {
+            container.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:20px">No active borrows to return</p>';
+        } else {
+            container.innerHTML = activeBorrows.map(t => `
+                <div style="background:#f8fafc;border-radius:12px;padding:12px;border-left:4px solid ${t.status === 'OVERDUE' ? '#dc2626' : '#4f46e5'}">
+                    <p style="font-size:14px;font-weight:700;margin-bottom:4px">📖 ${t.mediaTitle || 'Media #' + t.mediaId}</p>
+                    <p style="font-size:12px;color:#64748b">👤 ${t.memberName || 'Member #' + t.memberId}</p>
+                    <p style="font-size:12px;color:#64748b">⏰ Due: ${new Date(t.dueDate).toLocaleDateString()}</p>
+                    <p style="font-size:12px;color:#64748b">🆔 TXN ID: ${t.id}</p>
+                    ${t.status === 'OVERDUE' ? `<span style="background:#fee2e2;color:#dc2626;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600">⚠️ OVERDUE</span>` : ''}
+                    <button onclick="returnMedia(${t.id})"
+                        style="margin-top:8px;width:100%;padding:8px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+                        📥 Return This
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('return-form').classList.remove('hidden');
+    } catch (e) {
+        showToast('Could not load borrows', 'error');
+    }
+}
+
+
+
 loadDashboard();
 
 function logout() {
