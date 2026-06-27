@@ -15,7 +15,7 @@ function showPage(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('page-' + page).classList.add('active');
-    document.querySelectorAll('.nav-btn')[['dashboard','media','members','transactions'].indexOf(page)].classList.add('active');
+    document.querySelectorAll('.nav-btn')[['dashboard','media','members','transactions','activity'].indexOf(page)].classList.add('active');
     if (page === 'dashboard')    loadDashboard();
     if (page === 'media')        loadMedia();
     if (page === 'members')      loadMembers();
@@ -374,6 +374,15 @@ async function viewMemberBorrows(id, name) {
     }
 }
 
+async function payFine(id) {
+    try {
+        const res = await fetch(`${API}/transactions/fine/${id}/pay`, { method: 'PUT', headers: authHeaders });
+        const msg = await res.text();
+        if (res.ok) { showToast('✅ ' + msg); loadTransactions(); }
+        else showToast('❌ ' + msg, 'error');
+    } catch (e) { showToast('❌ Could not update fine', 'error'); }
+}
+
 // ── Transactions ──────────────────────────────────────────
 async function loadTransactions() {
     try {
@@ -383,17 +392,22 @@ async function loadTransactions() {
             container.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:30px">No transactions yet</p>';
             return;
         }
-        container.innerHTML = transactions.map(t => `
+        container.innerHTML = transactions.map(t => {
+            const isOverdue = t.status === 'OVERDUE';
+            const fine = isOverdue ? t.fineAmount : 0;
+            return `
             <div class="txn-card ${t.status.toLowerCase()}">
                 <h3>📖 ${t.mediaTitle || 'Media #' + t.mediaId}</h3>
                 <p>👤 ${t.memberName || 'Member #' + t.memberId}</p>
                 <p>📅 Borrowed: ${new Date(t.borrowDate).toLocaleDateString()}</p>
-                <p>⏰ Due: ${t.dueDate}</p>
+                <p>⏰ Due: ${new Date(t.dueDate).toLocaleDateString()}</p>
                 ${t.returnDate ? `<p>✅ Returned: ${new Date(t.returnDate).toLocaleDateString()}</p>` : ''}
+                ${fine > 0 ? `<p>💰 Fine: <strong style="color:#dc2626">₹${fine.toFixed(2)}</strong> ${t.finePaid ? '✅ Paid' : '❌ Unpaid'}</p>` : ''}
                 <p>🆔 TXN ID: <strong>${t.id}</strong></p>
                 <span class="txn-status status-${t.status.toLowerCase()}">${t.status}</span>
-            </div>
-        `).join('');
+                ${fine > 0 && !t.finePaid ? `<button onclick="payFine(${t.id})" class="btn-warning" style="margin-top:8px;font-size:12px;padding:6px 12px">💰 Mark Fine Paid</button>` : ''}
+            </div>`;
+        }).join('');
     } catch (e) {
         showToast('Could not load transactions', 'error');
     }
@@ -454,8 +468,102 @@ async function markOverdue() {
         showToast('❌ Could not mark overdue', 'error');
     }
 }
+// ── PDF Export ────────────────────────────────────────────
+function exportPDF() {
+    const transactions = document.getElementById('transactions-list').innerHTML;
+    const win = window.open('', '_blank');
+    win.document.write(`
+        <html>
+        <head>
+            <title>Library Ledger — Transaction Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; color: #1e293b; }
+                h1 { color: #4f46e5; border-bottom: 2px solid #4f46e5; padding-bottom: 10px; }
+                .txn-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+                .txn-card h3 { font-size: 15px; margin-bottom: 6px; }
+                .txn-card p  { font-size: 13px; color: #475569; margin: 3px 0; }
+                .status-borrowed { background: #ede9fe; color: #4f46e5; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+                .status-returned { background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+                .status-overdue  { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+                .btn-warning { display: none; }
+                @media print { button { display: none; } }
+            </style>
+        </head>
+        <body>
+            <h1>📚 Library Ledger — Transaction Report</h1>
+            <p>Generated: ${new Date().toLocaleString()}</p>
+            <hr>
+            ${transactions}
+            <script>window.onload = () => window.print();<\/script>
+        </body>
+        </html>
+    `);
+    win.document.close();
+}
 
+// ── Member Activity Report ────────────────────────────────
+async function loadMemberActivity() {
+    try {
+        const [members, transactions] = await Promise.all([
+            fetch(`${API}/members`, { headers: authHeaders }).then(r => r.json()),
+            fetch(`${API}/transactions`, { headers: authHeaders }).then(r => r.json())
+        ]);
+
+        const container = document.getElementById('member-activity');
+        if (!container) return;
+
+        container.innerHTML = members.map(m => {
+            const memberTxns    = transactions.filter(t => t.memberId === m.id);
+            const borrowed      = memberTxns.filter(t => t.status === 'BORROWED').length;
+            const returned      = memberTxns.filter(t => t.status === 'RETURNED').length;
+            const overdue       = memberTxns.filter(t => t.status === 'OVERDUE').length;
+            const totalFines    = memberTxns.reduce((sum, t) => sum + (t.fineAmount || 0), 0);
+            const unpaidFines   = memberTxns.filter(t => t.fineAmount > 0 && !t.finePaid)
+                                            .reduce((sum, t) => sum + (t.fineAmount || 0), 0);
+
+            return `
+            <div style="background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                    <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0">
+                        ${m.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h3 style="font-size:15px;font-weight:700">${m.name}</h3>
+                        <p style="font-size:12px;color:#64748b">${m.email}</p>
+                    </div>
+                    <span style="margin-left:auto;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;background:${m.active ? '#dcfce7' : '#fee2e2'};color:${m.active ? '#15803d' : '#dc2626'}">
+                        ${m.active ? 'Active' : 'Inactive'}
+                    </span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+                    <div style="background:#ede9fe;border-radius:10px;padding:10px;text-align:center">
+                        <div style="font-size:20px;font-weight:700;color:#4f46e5">${borrowed}</div>
+                        <div style="font-size:11px;color:#64748b">Borrowed</div>
+                    </div>
+                    <div style="background:#dcfce7;border-radius:10px;padding:10px;text-align:center">
+                        <div style="font-size:20px;font-weight:700;color:#15803d">${returned}</div>
+                        <div style="font-size:11px;color:#64748b">Returned</div>
+                    </div>
+                    <div style="background:#fee2e2;border-radius:10px;padding:10px;text-align:center">
+                        <div style="font-size:20px;font-weight:700;color:#dc2626">${overdue}</div>
+                        <div style="font-size:11px;color:#64748b">Overdue</div>
+                    </div>
+                </div>
+                ${totalFines > 0 ? `
+                <div style="background:#fef3c7;border-radius:10px;padding:10px;display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:13px;color:#b45309">💰 Total Fines: <strong>₹${totalFines.toFixed(2)}</strong></span>
+                    <span style="font-size:13px;color:#dc2626">Unpaid: <strong>₹${unpaidFines.toFixed(2)}</strong></span>
+                </div>` : ''}
+            </div>`;
+        }).join('');
+    } catch (e) {
+        showToast('Could not load activity report', 'error');
+    }
+}
 // ── Init ──────────────────────────────────────────────────
+
+
+if (page === 'activity') loadMemberActivity();
 loadDashboard();
 
 function logout() {

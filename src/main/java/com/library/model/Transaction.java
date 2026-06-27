@@ -34,4 +34,11 @@ public class Transaction {
     public void setMemberName(String memberName) { this.memberName = memberName; }
     public String getMediaTitle() { return mediaTitle; }
     public void setMediaTitle(String mediaTitle) { this.mediaTitle = mediaTitle; }
+    private double  fineAmount;
+    private boolean finePaid;
+    public double  getFineAmount()          { return fineAmount; }
+    public void    setFineAmount(double f)  { this.fineAmount = f; }
+    public boolean isFinePaid()             { return finePaid; }
+    public void    setFinePaid(boolean f)   { this.finePaid = f; }
+    
 }

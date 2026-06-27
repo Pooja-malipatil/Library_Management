@@ -24,24 +24,22 @@
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-        <button class="nav-btn active" onclick="showPage('dashboard')">
-            <span>🏠</span>
-            <label>Home</label>
-        </button>
-        <button class="nav-btn" onclick="showPage('media')">
-            <span>📚</span>
-            <label>Media</label>
-        </button>
-        <button class="nav-btn" onclick="showPage('members')">
-            <span>👥</span>
-            <label>Members</label>
-        </button>
-        <button class="nav-btn" onclick="showPage('transactions')">
-            <span>📋</span>
-            <label>Ledger</label>
-        </button>
-    </nav>
-
+    <button class="nav-btn active" onclick="showPage('dashboard')">
+        <span>🏠</span><label>Home</label>
+    </button>
+    <button class="nav-btn" onclick="showPage('media')">
+        <span>📚</span><label>Media</label>
+    </button>
+    <button class="nav-btn" onclick="showPage('members')">
+        <span>👥</span><label>Members</label>
+    </button>
+    <button class="nav-btn" onclick="showPage('transactions')">
+        <span>📋</span><label>Ledger</label>
+    </button>
+    <button class="nav-btn" onclick="showPage('activity')">
+        <span>📊</span><label>Activity</label>
+    </button>
+</nav>
     <!-- Pages -->
     <main class="main-content">
 
@@ -116,8 +114,8 @@
         <!-- Media Page -->
         <div id="page-media" class="page">
             <div class="page-header">
-                <h2>Media Inventory</h2>
-                <button class="btn-primary" onclick="showAddMediaForm()">+ Add</button>
+                <h2>Transaction Ledger</h2>
+                <button class="btn-secondary" onclick="exportPDF()" style="font-size:12px;padding:8px 12px">🖨️ Export PDF</button>
             </div>
             <div class="search-bar">
                 <input type="text" id="media-search" placeholder="🔍 Search title or creator..." oninput="searchMedia()">
@@ -269,7 +267,13 @@
                 </div>
             </div>
         </div>
-
+<!-- Activity Page -->
+<div id="page-activity" class="page">
+    <div class="page-header">
+        <h2>Member Activity</h2>
+    </div>
+    <div id="member-activity"></div>
+</div>
     </main>
 
     <!-- Toast -->

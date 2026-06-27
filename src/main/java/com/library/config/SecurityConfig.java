@@ -1,6 +1,5 @@
 package com.library.config;
 
-import com.library.auth.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +10,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.library.auth.JwtFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -37,6 +38,8 @@ public class SecurityConfig {
                 .antMatchers("/api/transactions/return/**").hasAnyAuthority("ADMIN","MEMBER")
                 .antMatchers("/api/transactions/member/**").hasAnyAuthority("ADMIN","MEMBER")
                 .antMatchers("/api/transactions/**").hasAuthority("ADMIN")
+                .antMatchers("/api/transactions/fines").hasAuthority("ADMIN")
+                .antMatchers("/api/transactions/fine/**").hasAnyAuthority("ADMIN","MEMBER")
                 .anyRequest().authenticated()
             .and()
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

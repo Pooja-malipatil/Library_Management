@@ -1,12 +1,13 @@
 package com.library.dao;
 
-import com.library.model.Transaction;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.library.model.Transaction;
 
 @Repository
 public class TransactionDAO {
@@ -26,6 +27,8 @@ public class TransactionDAO {
         t.setStatus(rs.getString("status"));
         try { t.setMemberName(rs.getString("member_name")); } catch (Exception ignored) {}
         try { t.setMediaTitle(rs.getString("media_title")); } catch (Exception ignored) {}
+        t.setFineAmount(rs.getDouble("fine_amount"));
+        t.setFinePaid  (rs.getBoolean("fine_paid"));
         return t;
     };
 
@@ -72,4 +75,16 @@ public class TransactionDAO {
         return jdbcTemplate.update(
             "UPDATE transactions SET status = 'OVERDUE' WHERE due_date < CURDATE() AND status = 'BORROWED'");
     }
+
+    public int updateFine(int transactionId, double fine) {
+    return jdbcTemplate.update(
+        "UPDATE transactions SET fine_amount = ? WHERE id = ?",
+        fine, transactionId);
+}
+
+public int markFinePaid(int transactionId) {
+    return jdbcTemplate.update(
+        "UPDATE transactions SET fine_paid = 1 WHERE id = ?",
+        transactionId);
+}
 }
