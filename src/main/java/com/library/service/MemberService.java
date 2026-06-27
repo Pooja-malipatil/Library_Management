@@ -35,12 +35,17 @@ public class MemberService {
         return "Member deactivated successfully!";
     }
     public String deleteMember(int id) {
-        Member m = memberDAO.findById(id);
-        if (m == null) throw new RuntimeException("Member not found with id: " + id);
-        memberDAO.delete(id);
-        return "Member deleted successfully!";
-    }
+    Member m = memberDAO.findById(id);
+    if (m == null) throw new RuntimeException("Member not found with id: " + id);
+    // Deactivate instead of delete if they have transactions
+    memberDAO.deactivate(id);
+    return "Member deactivated successfully!";
+}
     public List<Member> searchMembers(String keyword) {
         return memberDAO.search(keyword);
+    }
+    public String activate(int id) {
+        memberDAO.activate(id);
+        return "Member activated successfully!";
     }
 }

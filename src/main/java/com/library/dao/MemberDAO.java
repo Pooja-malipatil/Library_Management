@@ -61,4 +61,9 @@ public class MemberDAO {
             "SELECT * FROM members WHERE name LIKE ? OR email LIKE ?",
             this::mapRow, pattern, pattern);
     }
+
+    public int activate(int id) {
+        return jdbcTemplate.update(
+        "UPDATE members SET is_active = 1 WHERE id = ?", id);
+    }
 }

@@ -338,6 +338,75 @@
         }
         .empty-state span { font-size: 48px; display: block; margin-bottom: 12px; }
         .empty-state p { font-size: 14px; }
+        .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 200;
+    backdrop-filter: blur(2px);
+}
+.modal.hidden { display: none; }
+.modal-content {
+    background: white;
+    border-radius: 24px 24px 0 0;
+    padding: 24px 20px 32px;
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.modal-header h3 { font-size: 18px; font-weight: 700; }
+.close-btn {
+    background: #f1f5f9;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    color: #64748b;
+}
+.modal-content input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+}
+.modal-content input:focus { border-color: #4f46e5; }
+.modal-buttons { display: flex; gap: 10px; }
+.modal-buttons button { flex: 1; padding: 13px; }
+.btn-primary {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-secondary {
+    background: white;
+    color: #475569;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
     </style>
 </head>
 <body>
@@ -456,6 +525,22 @@
             </button>
         </div>
 
+<div id="borrow-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📤 Borrow Media</h3>
+            <button class="close-btn" onclick="hideBorrowModal()">✕</button>
+        </div>
+        <p id="borrow-media-title" style="font-weight:600;color:#4f46e5;font-size:15px;"></p>
+        <p style="font-size:13px;color:#64748b;margin-top:-4px">How many days do you need?</p>
+        <input type="number" id="borrow-days" value="7" min="1" max="90" placeholder="Loan days">
+        <div class="modal-buttons">
+            <button class="btn-secondary" onclick="hideBorrowModal()">Cancel</button>
+            <button class="btn-primary" onclick="confirmBorrow()">Borrow</button>
+        </div>
+    </div>
+</div>
+
     </main>
 
     <div id="toast" class="toast hidden"></div>
@@ -542,25 +627,36 @@
     }
 
     function mediaCard(m) {
-        const pct = (m.available / m.totalCopies) * 100;
-        const cls = pct > 60 ? 'high' : pct > 30 ? 'medium' : 'low';
-        return `
-        <div class="media-card">
-            <div class="media-card-header">
-                <h3>${m.title}</h3>
-                <span class="badge badge-${m.mediaType.toLowerCase()}">${m.mediaType}</span>
+    const pct = (m.available / m.totalCopies) * 100;
+    const cls = pct > 60 ? 'high' : pct > 30 ? 'medium' : 'low';
+    const canBorrow = m.available > 0;
+    return `
+    <div class="media-card">
+        <div class="media-card-header">
+            <h3>${m.title}</h3>
+            <span class="badge badge-${m.mediaType.toLowerCase()}">${m.mediaType}</span>
+        </div>
+        <p>👤 ${m.creator}</p>
+        <p>🎭 ${m.genre || 'N/A'} &nbsp;|&nbsp; 📅 ${m.releaseYear}</p>
+        <span class="media-id-badge">ID: ${m.id}</span>
+        <div class="availability">
+            <div class="avail-bar">
+                <div class="avail-fill ${cls}" style="width:${pct}%"></div>
             </div>
-            <p>👤 ${m.creator}</p>
-            <p>🎭 ${m.genre || 'N/A'} &nbsp;|&nbsp; 📅 ${m.releaseYear}</p>
-            <span class="media-id-badge">ID: ${m.id}</span>
-            <div class="availability">
-                <div class="avail-bar">
-                    <div class="avail-fill ${cls}" style="width:${pct}%"></div>
-                </div>
-                <span class="avail-text">${m.available}/${m.totalCopies} available</span>
-            </div>
-        </div>`;
-    }
+            <span class="avail-text">${m.available}/${m.totalCopies} available</span>
+        </div>
+        ${canBorrow
+            ? `<button onclick="showBorrowModal(${m.id}, '${m.title.replace(/'/g, "\\'")}')"
+                style="margin-top:12px;width:100%;padding:10px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
+                📤 Borrow This
+            </button>`
+            : `<button disabled
+                style="margin-top:12px;width:100%;padding:10px;background:#f1f5f9;color:#94a3b8;border:none;border-radius:10px;font-size:14px;font-weight:600;">
+                ❌ Not Available
+            </button>`
+        }
+    </div>`;
+}
 
     function searchBrowse() {
         const kw = document.getElementById('browse-search').value.toLowerCase();
@@ -629,6 +725,55 @@
 
     // ── Load home on start ────────────────────────────────
     loadHome();
+
+
+    let selectedMediaId = null;
+
+function showBorrowModal(mediaId, title) {
+    selectedMediaId = mediaId;
+    document.getElementById('borrow-media-title').textContent = '📖 ' + title;
+    document.getElementById('borrow-days').value = '7';
+    document.getElementById('borrow-modal').classList.remove('hidden');
+}
+
+function hideBorrowModal() {
+    document.getElementById('borrow-modal').classList.add('hidden');
+    selectedMediaId = null;
+}
+
+async function confirmBorrow() {
+    if (!memberId) {
+        showToast('No member account linked!', 'error');
+        return;
+    }
+    const days = parseInt(document.getElementById('borrow-days').value);
+    if (!days || days < 1 || days > 90) {
+        showToast('Please enter valid loan days (1-90)', 'error');
+        return;
+    }
+    try {
+        const res = await fetch(`${API}/transactions/borrow`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                memberId: parseInt(memberId),
+                mediaId:  selectedMediaId,
+                days:     days
+            })
+        });
+        const msg = await res.text();
+        if (res.ok) {
+            showToast('✅ ' + msg);
+            hideBorrowModal();
+            loadBrowse();
+            loadHome();
+        } else {
+            showToast('❌ ' + msg, 'error');
+        }
+    } catch (e) {
+        showToast('❌ Could not borrow', 'error');
+    }
+}
 </script>
 
 </body>

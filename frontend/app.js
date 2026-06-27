@@ -7,9 +7,8 @@ let allMedia = [];
 let allMembers = [];
 let mediaChart = null;
 
-// Auth headers for all requests
 const authHeaders = {
-    'Content-Type':  'application/json',
+    'Content-Type': 'application/json',
     'Authorization': 'Bearer ' + token
 };
 function showPage(page) {
@@ -96,7 +95,13 @@ function renderChart(media) {
 // ── Media ─────────────────────────────────────────────────
 async function loadMedia() {
     try {
-        
+        const res = await fetch(`${API}/media`, { headers: authHeaders });
+        if (res.status === 403 || res.status === 401) {
+            showToast('Session expired. Please login again.', 'error');
+            setTimeout(() => { localStorage.clear(); window.location.href = 'login.html'; }, 2000);
+            return;
+        }
+        allMedia = await res.json();
         renderMedia(allMedia);
     } catch (e) {
         showToast('Could not load media', 'error');
@@ -161,7 +166,11 @@ async function addMedia() {
     try {
         const res = await fetch(`${API}/media`, {
             method: 'POST',
-            headers: authHeaders,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(body)
         });
         const msg = await res.text();
         if (res.ok) {
@@ -172,7 +181,7 @@ async function addMedia() {
             document.getElementById('m-genre').value   = '';
             document.getElementById('m-year').value    = '';
             document.getElementById('m-copies').value  = '';
-            loadMedia();
+            await loadMedia();
             loadDashboard();
         } else {
             showToast('❌ ' + msg, 'error');
@@ -272,7 +281,10 @@ function renderMembers(list) {
                     ${m.active ? 'Active' : 'Inactive'}
                 </span>
                 <button class="btn-info" onclick="viewMemberBorrows(${m.id}, '${m.name}')">📋 Borrows</button>
-                <button class="btn-danger" onclick="deleteMember(${m.id})">🗑️ Delete</button>
+                ${m.active 
+                    ? `<button class="btn-danger" onclick="deactivateMember(${m.id})">🔴 Deactivate</button>`
+                    : `<button class="btn-info" onclick="reactivateMember(${m.id})">🟢 Activate</button>`
+                }
             </div>
         </div>
     `).join('');
@@ -320,21 +332,23 @@ async function addMember() {
     }
 }
 
-async function deleteMember(id) {
-    if (!confirm('Are you sure you want to delete this member?')) return;
+async function deactivateMember(id) {
+    if (!confirm('Deactivate this member?')) return;
     try {
         const res = await fetch(`${API}/members/${id}`, { method: 'DELETE', headers: authHeaders });
         const msg = await res.text();
-        if (res.ok) {
-            showToast('✅ ' + msg);
-            loadMembers();
-            loadDashboard();
-        } else {
-            showToast('❌ ' + msg, 'error');
-        }
-    } catch (e) {
-        showToast('❌ Could not delete member', 'error');
-    }
+        if (res.ok) { showToast('✅ ' + msg); loadMembers(); }
+        else showToast('❌ ' + msg, 'error');
+    } catch (e) { showToast('❌ Could not deactivate', 'error'); }
+}
+
+async function reactivateMember(id) {
+    try {
+        const res = await fetch(`${API}/members/${id}/activate`, { method: 'PUT', headers: authHeaders });
+        const msg = await res.text();
+        if (res.ok) { showToast('✅ ' + msg); loadMembers(); }
+        else showToast('❌ ' + msg, 'error');
+    } catch (e) { showToast('❌ Could not activate', 'error'); }
 }
 
 async function viewMemberBorrows(id, name) {
@@ -349,7 +363,7 @@ async function viewMemberBorrows(id, name) {
                 <div class="borrow-item">
                     <h4>📖 ${t.mediaTitle || 'Media #' + t.mediaId}</h4>
                     <p>📅 Borrowed: ${new Date(t.borrowDate).toLocaleDateString()}</p>
-                    <p>⏰ Due: ${t.dueDate}</p>
+                    <p>⏰ Due: ${new Date(t.dueDate).toLocaleDateString()}</p>
                     <p>🆔 TXN ID: <strong>${t.id}</strong></p>
                 </div>
             `).join('');
@@ -443,3 +457,8 @@ async function markOverdue() {
 
 // ── Init ──────────────────────────────────────────────────
 loadDashboard();
+
+function logout() {
+    localStorage.clear();
+    window.location.href = 'login.html';
+}

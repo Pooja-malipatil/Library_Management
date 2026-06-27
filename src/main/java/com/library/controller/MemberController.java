@@ -65,4 +65,13 @@ public class MemberController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @PutMapping("/{id}/activate")
+    public ResponseEntity<?> activate(@PathVariable int id) {
+        try {
+            return ResponseEntity.ok(memberService.activate(id));
+        }
+        catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

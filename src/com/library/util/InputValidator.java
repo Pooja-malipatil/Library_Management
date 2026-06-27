@@ -49,14 +49,16 @@ public class InputValidator {
 
     /** Validates a 4-digit year between 1800 and current year+1. */
     public static int requireValidYear(String raw) {
-        int year = requirePositiveInt(raw, "Year");
-        int current = java.time.Year.now().getValue();
-        if (year < 1800 || year > current + 1) {
-            throw new IllegalArgumentException("Year must be between 1800 and " + (current + 1) + ".");
+        try {
+            int year = Integer.parseInt(raw.trim());
+            if (year < 1800 || year > 2100) {
+                throw new IllegalArgumentException("Year must be between 1800 and 2100.");
+            }
+            return year;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Year must be a valid number.");
         }
-        return year;
     }
-
     /** Validates that a media_type string matches the allowed ENUM values. */
     public static String requireValidMediaType(String raw) {
         String t = requireNonBlank(raw, "Media type").toUpperCase();
