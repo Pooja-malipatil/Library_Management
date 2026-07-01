@@ -562,96 +562,39 @@ async function loadMemberActivity() {
             fetch(`${API}/transactions`, { headers: authHeaders }).then(r => r.json())
         ]);
 
-        const container = document.getElementById('member-activity');
-        if (!container) return;
+        const tbody = document.getElementById('activity-body');
+        if (!tbody) return;
 
         if (members.length === 0) {
-            container.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:30px">No members found</p>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8">No members found</td></tr>';
             return;
         }
 
-        container.innerHTML = members.map(m => {
-            const memberTxns  = transactions.filter(t => t.memberId === m.id);
-            const borrowed    = memberTxns.filter(t => t.status === 'BORROWED');
-            const returned    = memberTxns.filter(t => t.status === 'RETURNED');
-            const overdue     = memberTxns.filter(t => t.status === 'OVERDUE');
-            const totalFines  = memberTxns.reduce((sum, t) => sum + (t.fineAmount || 0), 0);
-            const unpaidFines = memberTxns.filter(t => t.fineAmount > 0 && !t.finePaid)
-                                          .reduce((sum, t) => sum + (t.fineAmount || 0), 0);
+        tbody.innerHTML = members.map((m, i) => {
+            const txns     = transactions.filter(t => t.memberId === m.id);
+            const borrowed = txns.filter(t => t.status === 'BORROWED').length;
+            const returned = txns.filter(t => t.status === 'RETURNED').length;
+            const overdue  = txns.filter(t => t.status === 'OVERDUE').length;
+            const fines    = txns.reduce((s, t) => s + (t.fineAmount || 0), 0);
+            const bg       = i % 2 === 0 ? '#ffffff' : '#f8fafc';
 
-            const txnListHTML = memberTxns.length === 0 ? '<p style="color:#94a3b8;font-size:13px;padding:8px 0">No transactions</p>' :
-                memberTxns.map(t => `
-                    <div style="background:#f8fafc;border-radius:8px;padding:10px;margin-bottom:6px;border-left:3px solid ${
-                        t.status === 'BORROWED' ? '#4f46e5' : t.status === 'RETURNED' ? '#16a34a' : '#dc2626'
-                    }">
-                        <p style="font-size:13px;font-weight:600;margin-bottom:4px">📖 ${t.mediaTitle || 'Media #' + t.mediaId}</p>
-                        <p style="font-size:11px;color:#64748b">📅 Borrowed: ${new Date(t.borrowDate).toLocaleDateString()}</p>
-                        <p style="font-size:11px;color:#64748b">⏰ Due: ${new Date(t.dueDate).toLocaleDateString()}</p>
-                        ${t.returnDate ? `<p style="font-size:11px;color:#16a34a">✅ Returned: ${new Date(t.returnDate).toLocaleDateString()}</p>` : ''}
-                        ${t.fineAmount > 0 ? `<p style="font-size:11px;color:#dc2626">💰 Fine: ₹${t.fineAmount.toFixed(2)} ${t.finePaid ? '✅ Paid' : '❌ Unpaid'}</p>` : ''}
-                        <span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;background:${
-                            t.status === 'BORROWED' ? '#ede9fe' : t.status === 'RETURNED' ? '#dcfce7' : '#fee2e2'
-                        };color:${
-                            t.status === 'BORROWED' ? '#4f46e5' : t.status === 'RETURNED' ? '#15803d' : '#dc2626'
-                        }">${t.status}</span>
-                    </div>
-                `).join('');
-
-            return `
-            <div style="background:white;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-                <!-- Member Header -->
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-                    <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0">
-                        ${m.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div style="flex:1">
-                        <h3 style="font-size:15px;font-weight:700">${m.name}</h3>
-                        <p style="font-size:12px;color:#64748b">${m.email} | ${m.phone}</p>
-                    </div>
-                    <span style="font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;background:${m.active ? '#dcfce7' : '#fee2e2'};color:${m.active ? '#15803d' : '#dc2626'}">
-                        ${m.active ? 'Active' : 'Inactive'}
-                    </span>
-                </div>
-
-                <!-- Stats -->
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
-                    <div style="background:#ede9fe;border-radius:10px;padding:10px;text-align:center">
-                        <div style="font-size:20px;font-weight:700;color:#4f46e5">${borrowed.length}</div>
-                        <div style="font-size:11px;color:#64748b">Borrowed</div>
-                    </div>
-                    <div style="background:#dcfce7;border-radius:10px;padding:10px;text-align:center">
-                        <div style="font-size:20px;font-weight:700;color:#15803d">${returned.length}</div>
-                        <div style="font-size:11px;color:#64748b">Returned</div>
-                    </div>
-                    <div style="background:#fee2e2;border-radius:10px;padding:10px;text-align:center">
-                        <div style="font-size:20px;font-weight:700;color:#dc2626">${overdue.length}</div>
-                        <div style="font-size:11px;color:#64748b">Overdue</div>
-                    </div>
-                </div>
-
-                <!-- Fines -->
-                ${totalFines > 0 ? `
-                <div style="background:#fef3c7;border-radius:10px;padding:10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                    <span style="font-size:13px;color:#b45309">💰 Total: <strong>₹${totalFines.toFixed(2)}</strong></span>
-                    <span style="font-size:13px;color:#dc2626">Unpaid: <strong>₹${unpaidFines.toFixed(2)}</strong></span>
-                </div>` : ''}
-
-                <!-- Transaction List -->
-                <div style="margin-bottom:10px">
-                    <p style="font-size:13px;font-weight:600;color:#475569;margin-bottom:8px">📋 Transaction History (${memberTxns.length})</p>
-                    ${txnListHTML}
-                </div>
-
-                <!-- PDF Button -->
-                <button onclick="exportMemberPDF(${m.id}, '${m.name.replace(/'/g, "\\'")}')" 
-                    style="width:100%;padding:10px;background:#f0f4ff;color:#4f46e5;border:1.5px solid #c4b5fd;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">
-                    🖨️ Export ${m.name}'s Report as PDF
-                </button>
-            </div>`;
+            return `<tr style="background:${bg}">
+                <td style="padding:12px 8px;font-size:13px;font-weight:600">${m.name}<br><span style="font-size:11px;color:#64748b;font-weight:400">${m.email}</span></td>
+                <td style="padding:12px 8px;text-align:center;color:#4f46e5;font-weight:700">${borrowed}</td>
+                <td style="padding:12px 8px;text-align:center;color:#15803d;font-weight:700">${returned}</td>
+                <td style="padding:12px 8px;text-align:center;color:#dc2626;font-weight:700">${overdue}</td>
+                <td style="padding:12px 8px;text-align:center;color:#b45309;font-weight:700">${fines > 0 ? '₹' + fines.toFixed(2) : '-'}</td>
+                <td style="padding:12px 8px;text-align:center">
+                    <button onclick="exportMemberPDF(${m.id}, '${m.name.replace(/'/g, "\\'")}')"
+                        style="background:#ede9fe;color:#4f46e5;border:none;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">
+                        🖨️ PDF
+                    </button>
+                </td>
+            </tr>`;
         }).join('');
     } catch (e) {
         console.error(e);
-        showToast('Could not load activity report', 'error');
+        showToast('Could not load activity', 'error');
     }
 }
 // ── Init ──────────────────────────────────────────────────

@@ -10,6 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
+<div style="max-width:480px;margin:0 auto;position:relative;min-height:100vh;background:#f0f4ff;">
 
     <!-- Header -->
     <header class="header">
@@ -268,11 +269,27 @@
     </div>
 </div>
 <!-- Activity Page -->
+<!-- Activity Page -->
 <div id="page-activity" class="page">
     <div class="page-header">
         <h2>Member Activity</h2>
+        <button class="btn-secondary" onclick="exportAllPDF()" style="font-size:12px;padding:8px 12px">🖨️ Export PDF</button>
     </div>
-    <div id="member-activity"></div>
+    <table id="activity-table" style="width:100%;border-collapse:collapse;background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <thead>
+            <tr style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;">
+                <th style="padding:12px 8px;text-align:left;font-size:13px">Member</th>
+                <th style="padding:12px 8px;text-align:center;font-size:13px">Borrowed</th>
+                <th style="padding:12px 8px;text-align:center;font-size:13px">Returned</th>
+                <th style="padding:12px 8px;text-align:center;font-size:13px">Overdue</th>
+                <th style="padding:12px 8px;text-align:center;font-size:13px">Fine</th>
+                <th style="padding:12px 8px;text-align:center;font-size:13px">PDF</th>
+            </tr>
+        </thead>
+        <tbody id="activity-body">
+            <tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8">Loading...</td></tr>
+        </tbody>
+    </table>
 </div>
     </main>
 
@@ -282,3 +299,5 @@
     <script src="app.js"></script>
 </body>
 </html>
+
+
