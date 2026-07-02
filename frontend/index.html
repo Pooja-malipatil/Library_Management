@@ -10,7 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
-<div style="max-width:480px;margin:0 auto;position:relative;min-height:100vh;background:#f0f4ff;">
 
     <!-- Header -->
     <header class="header">
@@ -25,22 +24,23 @@
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-    <button class="nav-btn active" onclick="showPage('dashboard')">
-        <span>🏠</span><label>Home</label>
-    </button>
-    <button class="nav-btn" onclick="showPage('media')">
-        <span>📚</span><label>Media</label>
-    </button>
-    <button class="nav-btn" onclick="showPage('members')">
-        <span>👥</span><label>Members</label>
-    </button>
-    <button class="nav-btn" onclick="showPage('transactions')">
-        <span>📋</span><label>Ledger</label>
-    </button>
-    <button class="nav-btn" onclick="showPage('activity')">
-        <span>📊</span><label>Activity</label>
-    </button>
-</nav>
+        <button class="nav-btn active" onclick="showPage('dashboard')">
+            <span>🏠</span><label>Home</label>
+        </button>
+        <button class="nav-btn" onclick="showPage('media')">
+            <span>📚</span><label>Media</label>
+        </button>
+        <button class="nav-btn" onclick="showPage('members')">
+            <span>👥</span><label>Members</label>
+        </button>
+        <button class="nav-btn" onclick="showPage('transactions')">
+            <span>📋</span><label>Ledger</label>
+        </button>
+        <button class="nav-btn" onclick="showPage('activity')">
+            <span>📊</span><label>Activity</label>
+        </button>
+    </nav>
+
     <!-- Pages -->
     <main class="main-content">
 
@@ -50,63 +50,42 @@
                 <h2>Welcome Back! 👋</h2>
                 <p>Here's your library overview</p>
             </div>
-
             <div class="stats-grid">
                 <div class="stat-card blue">
                     <div class="stat-icon">📚</div>
-                    <div class="stat-info">
-                        <h3 id="total-media">0</h3>
-                        <p>Total Media</p>
-                    </div>
+                    <div class="stat-info"><h3 id="total-media">0</h3><p>Total Media</p></div>
                 </div>
                 <div class="stat-card green">
                     <div class="stat-icon">👥</div>
-                    <div class="stat-info">
-                        <h3 id="total-members">0</h3>
-                        <p>Members</p>
-                    </div>
+                    <div class="stat-info"><h3 id="total-members">0</h3><p>Members</p></div>
                 </div>
                 <div class="stat-card orange">
                     <div class="stat-icon">🔄</div>
-                    <div class="stat-info">
-                        <h3 id="total-borrowed">0</h3>
-                        <p>Borrowed</p>
-                    </div>
+                    <div class="stat-info"><h3 id="total-borrowed">0</h3><p>Borrowed</p></div>
                 </div>
                 <div class="stat-card red">
                     <div class="stat-icon">⚠️</div>
-                    <div class="stat-info">
-                        <h3 id="total-overdue">0</h3>
-                        <p>Overdue</p>
-                    </div>
+                    <div class="stat-info"><h3 id="total-overdue">0</h3><p>Overdue</p></div>
                 </div>
             </div>
-
-            <!-- Chart -->
             <div class="chart-card">
                 <h3>Media by Type</h3>
                 <canvas id="mediaChart"></canvas>
             </div>
-
-            <!-- Quick Actions -->
             <div class="quick-actions">
                 <h2>Quick Actions</h2>
                 <div class="action-grid">
                     <button class="action-btn" onclick="showPage('media'); showAddMediaForm()">
-                        <span>➕</span>
-                        <label>Add Media</label>
+                        <span>➕</span><label>Add Media</label>
                     </button>
                     <button class="action-btn" onclick="showPage('members'); showAddMemberForm()">
-                        <span>👤</span>
-                        <label>Add Member</label>
+                        <span>👤</span><label>Add Member</label>
                     </button>
                     <button class="action-btn" onclick="showPage('transactions'); showBorrowForm()">
-                        <span>📤</span>
-                        <label>Borrow</label>
+                        <span>📤</span><label>Borrow</label>
                     </button>
                     <button class="action-btn" onclick="showPage('transactions'); showReturnForm()">
-                        <span>📥</span>
-                        <label>Return</label>
+                        <span>📥</span><label>Return</label>
                     </button>
                 </div>
             </div>
@@ -115,8 +94,8 @@
         <!-- Media Page -->
         <div id="page-media" class="page">
             <div class="page-header">
-                <h2>Transaction Ledger</h2>
-                <button class="btn-secondary" onclick="exportPDF()" style="font-size:12px;padding:8px 12px">🖨️ Export PDF</button>
+                <h2>Media Inventory</h2>
+                <button class="btn-primary" onclick="showAddMediaForm()">+ Add</button>
             </div>
             <div class="search-bar">
                 <input type="text" id="media-search" placeholder="🔍 Search title or creator..." oninput="searchMedia()">
@@ -130,7 +109,6 @@
             </div>
             <div id="media-list" class="card-list"></div>
 
-            <!-- Add Media Modal -->
             <div id="add-media-form" class="modal hidden">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -156,7 +134,6 @@
                 </div>
             </div>
 
-            <!-- Edit Media Modal -->
             <div id="edit-media-form" class="modal hidden">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -195,7 +172,6 @@
             </div>
             <div id="members-list" class="card-list"></div>
 
-            <!-- Add Member Modal -->
             <div id="add-member-form" class="modal hidden">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -212,7 +188,6 @@
                 </div>
             </div>
 
-            <!-- View Borrows Modal -->
             <div id="view-borrows-modal" class="modal hidden">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -228,6 +203,7 @@
         <div id="page-transactions" class="page">
             <div class="page-header">
                 <h2>Transaction Ledger</h2>
+                <button class="btn-secondary" onclick="exportPDF()" style="font-size:12px;padding:8px 12px">🖨️ PDF</button>
             </div>
             <div class="action-row">
                 <button class="btn-primary" onclick="showBorrowForm()">📤 Borrow</button>
@@ -236,7 +212,6 @@
             </div>
             <div id="transactions-list" class="card-list"></div>
 
-            <!-- Borrow Modal -->
             <div id="borrow-form" class="modal hidden">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -253,51 +228,47 @@
                 </div>
             </div>
 
-            <!-- Return Modal -->
-            <!-- Return Modal -->
-<div id="return-form" class="modal hidden">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>📥 Return Media</h3>
-            <button class="close-btn" onclick="hideModal('return-form')">✕</button>
+            <div id="return-form" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>📥 Return Media</h3>
+                        <button class="close-btn" onclick="hideModal('return-form')">✕</button>
+                    </div>
+                    <p style="font-size:13px;color:#64748b">Select item to return:</p>
+                    <div id="return-items-list" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
+                    <div class="modal-buttons">
+                        <button class="btn-secondary" onclick="hideModal('return-form')">Cancel</button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <p style="font-size:13px;color:#64748b">Select item to return:</p>
-        <div id="return-items-list" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
-        <div class="modal-buttons">
-            <button class="btn-secondary" onclick="hideModal('return-form')">Cancel</button>
+
+        <!-- Activity Page -->
+        <div id="page-activity" class="page">
+            <div class="page-header">
+                <h2>Member Activity</h2>
+                <button class="btn-secondary" onclick="exportAllPDF()" style="font-size:12px;padding:8px 12px">🖨️ Export PDF</button>
+            </div>
+            <table id="activity-table" style="width:100%;border-collapse:collapse;background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                <thead>
+                    <tr style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;">
+                        <th style="padding:12px 8px;text-align:left;font-size:13px">Member</th>
+                        <th style="padding:12px 8px;text-align:center;font-size:13px">Borrowed</th>
+                        <th style="padding:12px 8px;text-align:center;font-size:13px">Returned</th>
+                        <th style="padding:12px 8px;text-align:center;font-size:13px">Overdue</th>
+                        <th style="padding:12px 8px;text-align:center;font-size:13px">Fine</th>
+                        <th style="padding:12px 8px;text-align:center;font-size:13px">PDF</th>
+                    </tr>
+                </thead>
+                <tbody id="activity-body">
+                    <tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8">Loading...</td></tr>
+                </tbody>
+            </table>
         </div>
-    </div>
-</div>
-<!-- Activity Page -->
-<!-- Activity Page -->
-<div id="page-activity" class="page">
-    <div class="page-header">
-        <h2>Member Activity</h2>
-        <button class="btn-secondary" onclick="exportAllPDF()" style="font-size:12px;padding:8px 12px">🖨️ Export PDF</button>
-    </div>
-    <table id="activity-table" style="width:100%;border-collapse:collapse;background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-        <thead>
-            <tr style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;">
-                <th style="padding:12px 8px;text-align:left;font-size:13px">Member</th>
-                <th style="padding:12px 8px;text-align:center;font-size:13px">Borrowed</th>
-                <th style="padding:12px 8px;text-align:center;font-size:13px">Returned</th>
-                <th style="padding:12px 8px;text-align:center;font-size:13px">Overdue</th>
-                <th style="padding:12px 8px;text-align:center;font-size:13px">Fine</th>
-                <th style="padding:12px 8px;text-align:center;font-size:13px">PDF</th>
-            </tr>
-        </thead>
-        <tbody id="activity-body">
-            <tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8">Loading...</td></tr>
-        </tbody>
-    </table>
-</div>
+
     </main>
 
-    <!-- Toast -->
     <div id="toast" class="toast hidden"></div>
-
     <script src="app.js"></script>
 </body>
 </html>
-
-
